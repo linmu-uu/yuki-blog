@@ -10,6 +10,10 @@
  *   public/wallpaper/desktop/orig-desktop-NN-1600.avif   1600 宽（1080p/1440p，省流量）
  *   public/wallpaper/mobile/orig-mobile-NN.avif          1080×1920 竖版
  *
+ * 注意：生成的壁纸**默认不进轮换**。轮换只收 ba-*（npm run wallpapers:import 导入的图），
+ * 因为这些渐变图里没有二次元人物，主人明确不要它们当背景。
+ * 想让它们重新上台，把 src/data/background.ts 里的 ALLOWED_PREFIXES 加上 "orig-" 即可。
+ *
  * 用法：npm run wallpapers:generate
  */
 

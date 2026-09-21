@@ -15,7 +15,12 @@
 | `npm run wallpapers:import` | 从 `D:/wallpapers` 导入壁纸（压成 AVIF，同时出桌面版和手机版） |
 | `npm run wallpapers:palette` | 重新分析壁纸主色，生成 `src/data/wallpaper-palettes.json` |
 | `npm run wallpapers:variants` | 生成 1600px 的壁纸小图（配合 `srcset` 按屏幕挑图） |
+| `npm run wallpapers:generate` | 生成程序绘制的渐变壁纸（备用，默认不进轮换） |
 | `npm run gallery:thumbs` | 生成相册缩略图（网格用小图，点开仍是原图） |
+
+> 壁纸轮换只收 `ba-*`（自己找的图，放在 `D:/wallpapers` 后跑 `wallpapers:import` 导入）。
+> 程序生成的 `orig-*` 与早期的 `schale / millennium / halo / trinity` 都没有二次元人物，
+> 已移出轮换；想启用就改 `src/data/background.ts` 里的 `ALLOWED_PREFIXES`。
 
 ## 目录结构
 

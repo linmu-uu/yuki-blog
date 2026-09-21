@@ -43,22 +43,22 @@ export const gradientPresets: GradientPreset[] = [
 	{ id: "trinity", name: "三一学院", colors: ["#0b1226", "#3b9bff", "#cdeaff"] },
 ];
 
-/** 早期那四张程序生成的预设壁纸（文件名不带编号） */
-const PRESET_WALLPAPERS = new Set(["schale", "millennium", "halo", "trinity"]);
+/**
+ * 扫描 public/wallpaper/<kind>/ 下参与轮换的壁纸。
+ *
+ * 只收 `ba-<kind>-NN.avif` —— 也就是 npm run wallpapers:import 导入的、自己找的图。
+ * 程序生成的纯渐变壁纸（orig-* 以及早期的 schale / millennium / halo / trinity）
+ * 没有二次元人物，已经移出轮换；哪天想让它们回来，把前缀加进下面这个数组就行。
+ */
+const ALLOWED_PREFIXES = ["ba-"];
 
-/** 扫描 public/wallpaper/<kind>/ 下所有参与轮换的壁纸 */
 function listWallpapers(kind: "desktop" | "mobile"): string[] {
 	try {
 		return readdirSync(path.resolve("public/wallpaper", kind))
 			.filter((name) => {
 				if (!name.endsWith(".avif")) return false;
 				if (name.includes("-1600.")) return false; // 小图交给 srcset，不进轮换
-				const id = name.replace(/\.avif$/, "");
-				return (
-					PRESET_WALLPAPERS.has(id) ||
-					id.startsWith(`ba-${kind}-`) ||
-					id.startsWith(`orig-${kind}-`)
-				);
+				return ALLOWED_PREFIXES.some((prefix) => name.startsWith(`${prefix}${kind}-`));
 			})
 			.sort()
 			.map((name) => `/wallpaper/${kind}/${name}`);
@@ -76,10 +76,8 @@ export const background = {
 	image: {
 		/*
 		 * 壁纸清单由目录自动扫描生成（构建时在 Node 里读文件夹）：
-		 *   - ba-*    ：自己找的图，用 npm run wallpapers:import 导入
-		 *   - orig-*  ：程序生成的原创壁纸，用 npm run wallpapers:generate 生成
-		 *   - schale / millennium / halo / trinity：早期那四张预设
-		 * 加图之后不用再来改这里，之前手写清单就漏掉过新导入的图。
+		 * 只收 ba-*（自己找的图，用 npm run wallpapers:import 导入并压缩）。
+		 * 加图之后不用再来改这里。
 		 */
 		desktop: listWallpapers("desktop"),
 		mobile: listWallpapers("mobile"),

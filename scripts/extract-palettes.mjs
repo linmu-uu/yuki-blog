@@ -19,9 +19,6 @@ const DIRS = [
 ];
 const OUT = path.resolve("src/data/wallpaper-palettes.json");
 
-/** 早期四张预设壁纸的文件名（不带编号） */
-const PRESET_WALLPAPERS = new Set(["schale.avif", "millennium.avif", "halo.avif", "trinity.avif"]);
-
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
 /** #rrggbb → [r, g, b] */
@@ -222,10 +219,8 @@ for (const { dir, prefix } of DIRS) {
 		continue;
 	}
 	for (const entry of entries.sort()) {
-		// 只分析实际参与轮换的壁纸：*-1600.avif 是缩小版，不进配色表
-		if (!/^(?:ba|orig)-(?:desktop|mobile)-\d+\.avif$/.test(entry) && !PRESET_WALLPAPERS.has(entry)) {
-			continue;
-		}
+		// 只分析实际参与轮换的壁纸（ba-* 自己找的图）；程序生成的渐变图已移出轮换
+		if (!/^ba-(?:desktop|mobile)-\d+\.avif$/.test(entry)) continue;
 		const info = await analyse(path.join(dir, entry));
 		result[`${prefix}${entry}`] = info;
 		count += 1;
