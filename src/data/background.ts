@@ -1,4 +1,6 @@
 import palettes from "./wallpaper-palettes.json";
+import { readdirSync } from "node:fs";
+import path from "node:path";
 
 /**
  * 背景配置
@@ -41,6 +43,30 @@ export const gradientPresets: GradientPreset[] = [
 	{ id: "trinity", name: "三一学院", colors: ["#0b1226", "#3b9bff", "#cdeaff"] },
 ];
 
+/** 早期那四张程序生成的预设壁纸（文件名不带编号） */
+const PRESET_WALLPAPERS = new Set(["schale", "millennium", "halo", "trinity"]);
+
+/** 扫描 public/wallpaper/<kind>/ 下所有参与轮换的壁纸 */
+function listWallpapers(kind: "desktop" | "mobile"): string[] {
+	try {
+		return readdirSync(path.resolve("public/wallpaper", kind))
+			.filter((name) => {
+				if (!name.endsWith(".avif")) return false;
+				if (name.includes("-1600.")) return false; // 小图交给 srcset，不进轮换
+				const id = name.replace(/\.avif$/, "");
+				return (
+					PRESET_WALLPAPERS.has(id) ||
+					id.startsWith(`ba-${kind}-`) ||
+					id.startsWith(`orig-${kind}-`)
+				);
+			})
+			.sort()
+			.map((name) => `/wallpaper/${kind}/${name}`);
+	} catch {
+		return [];
+	}
+}
+
 export const background = {
 	mode: "image" as "gradient" | "image",
 
@@ -48,51 +74,15 @@ export const background = {
 	gradient: "",
 
 	image: {
-		// 你自己找的蔚蓝档案壁纸（scripts/import-wallpapers.mjs 导入并压缩过）
-		// 每次刷新页面会随机挑一张显示，配色也跟着这张图走
-		desktop: [
-			"/wallpaper/desktop/ba-desktop-01.avif",
-			"/wallpaper/desktop/ba-desktop-02.avif",
-			"/wallpaper/desktop/ba-desktop-03.avif",
-			"/wallpaper/desktop/ba-desktop-04.avif",
-			"/wallpaper/desktop/ba-desktop-05.avif",
-			"/wallpaper/desktop/ba-desktop-06.avif",
-			"/wallpaper/desktop/ba-desktop-07.avif",
-			"/wallpaper/desktop/ba-desktop-08.avif",
-			"/wallpaper/desktop/ba-desktop-09.avif",
-		],
-		mobile: [
-			"/wallpaper/mobile/ba-mobile-01.avif",
-			"/wallpaper/mobile/ba-mobile-02.avif",
-			"/wallpaper/mobile/ba-mobile-03.avif",
-			"/wallpaper/mobile/ba-mobile-04.avif",
-			"/wallpaper/mobile/ba-mobile-05.avif",
-			"/wallpaper/mobile/ba-mobile-06.avif",
-			"/wallpaper/mobile/ba-mobile-07.avif",
-			"/wallpaper/mobile/ba-mobile-08.avif",
-			"/wallpaper/mobile/ba-mobile-09.avif",
-		],
-
-		/* 备选：程序生成的原创渐变壁纸（零版权风险），想混着用就把下面解开
-		desktop: [
-			"/wallpaper/desktop/ba-desktop-01.avif",
-			"/wallpaper/desktop/ba-desktop-02.avif",
-			"/wallpaper/desktop/schale.avif",
-			"/wallpaper/desktop/millennium.avif",
-			"/wallpaper/desktop/halo.avif",
-			"/wallpaper/desktop/trinity.avif",
-		],
-		mobile: [
-			"/wallpaper/mobile/ba-mobile-01.avif",
-			"/wallpaper/mobile/ba-mobile-02.avif",
-			"/wallpaper/mobile/ba-mobile-03.avif",
-			"/wallpaper/mobile/ba-mobile-04.avif",
-			"/wallpaper/mobile/schale.avif",
-			"/wallpaper/mobile/millennium.avif",
-			"/wallpaper/mobile/halo.avif",
-			"/wallpaper/mobile/trinity.avif",
-		],
-		*/
+		/*
+		 * 壁纸清单由目录自动扫描生成（构建时在 Node 里读文件夹）：
+		 *   - ba-*    ：自己找的图，用 npm run wallpapers:import 导入
+		 *   - orig-*  ：程序生成的原创壁纸，用 npm run wallpapers:generate 生成
+		 *   - schale / millennium / halo / trinity：早期那四张预设
+		 * 加图之后不用再来改这里，之前手写清单就漏掉过新导入的图。
+		 */
+		desktop: listWallpapers("desktop"),
+		mobile: listWallpapers("mobile"),
 	},
 };
 

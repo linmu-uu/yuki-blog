@@ -11,6 +11,7 @@
     ,"wallpapers:import": "node scripts/import-wallpapers.mjs"
     ,"wallpapers:palette": "node scripts/extract-palettes.mjs"
     ,"wallpapers:variants": "node scripts/make-wallpaper-variants.mjs"
+    ,"wallpapers:generate": "node scripts/generate-original-wallpapers.mjs"
     ,"gallery:thumbs": "node scripts/make-gallery-thumbs.mjs"
     ,"admin": "node scripts/admin-server.mjs"
     ,"deploy": "npm run build && wrangler deploy"

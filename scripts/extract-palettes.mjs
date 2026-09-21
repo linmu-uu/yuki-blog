@@ -19,7 +19,20 @@ const DIRS = [
 ];
 const OUT = path.resolve("src/data/wallpaper-palettes.json");
 
+/** 早期四张预设壁纸的文件名（不带编号） */
+const PRESET_WALLPAPERS = new Set(["schale.avif", "millennium.avif", "halo.avif", "trinity.avif"]);
+
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+
+/** #rrggbb → [r, g, b] */
+const hexToRgb = (hex) => {
+	const value = hex.replace("#", "");
+	return [
+		Number.parseInt(value.slice(0, 2), 16),
+		Number.parseInt(value.slice(2, 4), 16),
+		Number.parseInt(value.slice(4, 6), 16),
+	];
+};
 
 function rgbToHsl(r, g, b) {
 	const rn = r / 255;
@@ -165,11 +178,26 @@ async function analyse(file) {
 		return `#${[r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("")}`;
 	};
 
+	/*
+	 * 单色系壁纸（比如程序生成的渐变图）常常找不出第二个色相。
+	 * 这时从主色派生一个同族邻居，而不是硬塞一个固定青色 —— 紫色壁纸配青色辅色会很跳。
+	 */
+	const derive = (hex, hueShift, satTarget, lumTarget) => {
+		const { h, s, l } = rgbToHsl(...hexToRgb(hex));
+		return hslToHex(
+			(h + hueShift + 1) % 1,
+			clamp(s * 0.92, 0.4, satTarget),
+			clamp(l, 0.4, lumTarget),
+		);
+	};
+
 	const accent = primary ? normalise(primary.color, 0.94, 0.66, HUE_LIMITS.primary) : "#3b9bff";
-	const accent2 = secondary ? normalise(secondary.color, 0.9, 0.74, HUE_LIMITS.secondary) : "#5fe1ff";
+	const accent2 = secondary
+		? normalise(secondary.color, 0.9, 0.74, HUE_LIMITS.secondary)
+		: derive(accent, 0.05, 0.85, 0.8);
 	const accent3 = tertiary
 		? normalise(tertiary.color, 0.92, 0.8, HUE_LIMITS.tertiary)
-		: lighten(accent2, 0.45);
+		: lighten(derive(accent, -0.05, 0.8, 0.88), 0.12);
 
 	const brightness = lumSum / Math.max(pixels, 1);
 
@@ -194,8 +222,10 @@ for (const { dir, prefix } of DIRS) {
 		continue;
 	}
 	for (const entry of entries.sort()) {
-		// 只分析实际参与轮换的壁纸：*-1600.avif 是缩小版、schale 之类是早期预设，都不需要
-		if (!/^ba-(desktop|mobile)-\d+\.avif$/.test(entry)) continue;
+		// 只分析实际参与轮换的壁纸：*-1600.avif 是缩小版，不进配色表
+		if (!/^(?:ba|orig)-(?:desktop|mobile)-\d+\.avif$/.test(entry) && !PRESET_WALLPAPERS.has(entry)) {
+			continue;
+		}
 		const info = await analyse(path.join(dir, entry));
 		result[`${prefix}${entry}`] = info;
 		count += 1;
