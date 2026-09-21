@@ -411,6 +411,7 @@ button {
    旧页面轻微上移淡出，新页面从下方柔和滑入 —— 追求"顺滑、不晕"的手感
    ========================================================================== */
 
+/* 页面切换：旧页轻微上移淡出、新页柔和滑入（只动 opacity / transform） */
 ::view-transition-old(root) {
 	animation: page-leave 170ms var(--ease-glide) both;
 }
@@ -438,11 +439,12 @@ button {
  * 只动 opacity / transform，不碰布局，弱机也不掉帧。
  */
 .page-fade {
-	transition: opacity 150ms var(--ease-soft);
+	transition: opacity 260ms var(--ease-glide);
 }
 
 html.is-leaving .page-fade {
-	opacity: 0.35;
+	opacity: 0.5;
+	transition-duration: 150ms;
 }
 
 /* 顶部栏与背景层固定住，不跟着页面一起动，避免闪烁 */

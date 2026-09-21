@@ -1,10 +1,15 @@
 # Cloudflare Workers 静态资源缓存策略
 #
-# 背景：Workers 静态资源默认返回 Cache-Control: public, must-revalidate, max-age=0，
-# 导致回访时浏览器要对每个 JS/CSS/图片重新发一次请求（跨境一次往返 100~300ms），
-# 20 多个资源累加起来就很慢。下面的规则让静态资源在浏览器端真正缓存住。
+# 两条原则：
+#   1. 带内容哈希的产物（/_astro/*）永久缓存；图片/音频这类不带哈希的缓存一天
+#   2. HTML 页面用 max-age=0 + stale-while-revalidate：浏览器可以先用缓存秒开
+#      （配合 hover 预取，切栏目就不会卡），同时在后台重新验证，内容最多一分钟更新
 #
-# 注意：HTML 保持默认的 max-age=0，这样每次部署后访客立刻能看到新内容。
+# 注意：HTML 的规则必须写在资源规则之后 —— 同一路径如果都匹配，后面的规则生效。
+# 比如 /gallery/ 这个目录页既匹配 /gallery/* 也匹配 /gallery/，靠顺序让 HTML 规则赢，
+# 否则页面会被当成图片缓存一整天，部署完还看到旧版。
+
+# ---------- 静态资源 ----------
 
 # Astro 构建产物：文件名里带内容哈希，内容永不改变，可以缓存一年
 /_astro/*
@@ -14,8 +19,16 @@
 /assets/*
   Cache-Control: public, max-age=86400
 
-# 图库：缓存一天
-/gallery/*
+# 图库里的图片：缓存一天。
+# 注意两点 Cloudflare 的行为：
+#   1. _headers 多条命中是「叠加」而不是覆盖
+#   2. 通配符 * 不跨 "/"
+# 所以这里按相册目录逐个写，而不是写 /gallery/* —— 后者会把 /gallery/ 目录页
+# 也套上 86400，部署后可能一整天看到旧页面。（新增相册时记得加一行）
+/gallery/blue-archive/*
+  Cache-Control: public, max-age=86400
+
+/gallery/firefly-2026/*
   Cache-Control: public, max-age=86400
 
 # 壁纸：缓存一天
@@ -35,3 +48,32 @@
 
 /avatar.avif
   Cache-Control: public, max-age=604800
+
+# ---------- HTML 页面 ----------
+
+/
+  Cache-Control: public, max-age=0, stale-while-revalidate=60
+
+/archive/
+  Cache-Control: public, max-age=0, stale-while-revalidate=60
+
+/moments/
+  Cache-Control: public, max-age=0, stale-while-revalidate=60
+
+/gallery/
+  Cache-Control: public, max-age=0, stale-while-revalidate=60
+
+/friends/
+  Cache-Control: public, max-age=0, stale-while-revalidate=60
+
+/guestbook/
+  Cache-Control: public, max-age=0, stale-while-revalidate=60
+
+/about/
+  Cache-Control: public, max-age=0, stale-while-revalidate=60
+
+/admin/
+  Cache-Control: public, max-age=0, stale-while-revalidate=60
+
+/posts/*
+  Cache-Control: public, max-age=0, stale-while-revalidate=60
