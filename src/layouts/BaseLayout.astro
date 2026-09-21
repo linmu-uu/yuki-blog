@@ -6,6 +6,7 @@ import SiteFooter from "../components/SiteFooter.astro";
 import Loader from "../components/Loader.astro";
 import PetalLayer from "../components/PetalLayer.astro";
 import { site } from "../data/site";
+import { localTracks } from "../data/music";
 import {
 	background,
 	buildWallpaperManifest,
@@ -123,7 +124,9 @@ const themeCss = [
 		<div class="cursor-glow" aria-hidden="true" transition:persist="glow"></div>
 		<div class="scroll-progress" aria-hidden="true" transition:persist="progress"></div>
 		<SiteHeader transition:persist="site-header" />
-		<slot />
+		<div class="page-fade" data-page-fade>
+			<slot />
+		</div>
 		<SiteFooter />
 		<button class="to-top" type="button" data-to-top aria-label="回到顶部" transition:persist="to-top">
 			<svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -135,13 +138,50 @@ const themeCss = [
 					stroke-linejoin="round"></path>
 			</svg>
 		</button>
+		<script
+			type="application/json"
+			id="music-playlist"
+			set:html={JSON.stringify(localTracks)}
+		/>
 		<script>
 			import { init } from "../scripts/effects";
 			import { initWallpaper, watchWallpaperBreakpoint } from "../scripts/wallpaper";
+			import { configureMusic, loadRemotePlaylist } from "../scripts/music";
+			import { site } from "../data/site";
+
+			// 播放列表：先装本地 public/audio/ 里扫到的曲目
+			const playlistNode = document.getElementById("music-playlist");
+			try {
+				configureMusic(playlistNode?.textContent ? JSON.parse(playlistNode.textContent) : []);
+			} catch {
+				configureMusic([]);
+			}
+
+			// 有远程歌单（主人自己的 token 链接）就等页面闲下来再拉，不抢首屏带宽
+			if (site.music.api) {
+				const warm = () => void loadRemotePlaylist(site.music.api, site.music.cover);
+				const idle = (
+					window as unknown as {
+						requestIdleCallback?: (cb: () => void, options?: { timeout: number }) => number;
+					}
+				).requestIdleCallback;
+				if (idle) idle(warm, { timeout: 3000 });
+				else window.setTimeout(warm, 1800);
+			}
 
 			init();
 			initWallpaper();
 			watchWallpaperBreakpoint();
+			/*
+			 * 切页面时让正文轻轻淡出、新页面再淡入。
+			 * 只在「站内跳转」时加这个类，首屏首次绘制不受影响。
+			 */
+			document.addEventListener("astro:before-preparation", () => {
+				document.documentElement.classList.add("is-leaving");
+			});
+			document.addEventListener("astro:after-swap", () => {
+				document.documentElement.classList.remove("is-leaving");
+			});
 			document.addEventListener("astro:page-load", () => {
 				init();
 				initWallpaper();

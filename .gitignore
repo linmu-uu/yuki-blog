@@ -9,6 +9,10 @@ dist/
 .wrangler/
 .dev.vars
 
+# AI 生成的中间产物（成品会转成 AVIF 放进 public/）
+output/
+tmp/
+
 # 系统与编辑器
 .DS_Store
 Thumbs.db

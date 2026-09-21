@@ -4,39 +4,50 @@ import { site } from "../data/site";
 
 <section class="card music" data-reveal style="--reveal-delay:240ms">
 	<h2 class="section-title">{site.music.title}</h2>
+
 	<div class="music__player">
-		<img
-			class="music__cover"
-			src="/audio/cover.webp"
-			alt={`${site.music.track} 的封面`}
-			width="56"
-			height="56"
-		/>
+		<img class="music__cover" data-cover src={site.music.cover} alt="封面" width="56" height="56" />
 		<div class="music__meta">
-			<span class="music__track">{site.music.track}</span>
+			<span class="music__track" data-title>点播放开始听</span>
 			<span class="music__time" data-time>00:00 / 00:00</span>
 		</div>
-		<button
-			class="music__play"
-			type="button"
-			data-play
-			aria-label="播放背景音乐"
-			aria-pressed="false"
-		>
-			<svg class="music__icon music__icon--play" viewBox="0 0 24 24" aria-hidden="true">
-				<path d="M8 5.5v13l11-6.5-11-6.5Z" fill="currentColor"></path>
-			</svg>
-			<svg class="music__icon music__icon--pause" viewBox="0 0 24 24" aria-hidden="true">
-				<path d="M8 5h3v14H8zM13 5h3v14h-3z" fill="currentColor"></path>
-			</svg>
-		</button>
+		<div class="music__controls">
+			<button class="music__step" type="button" data-prev aria-label="上一首">
+				<svg viewBox="0 0 24 24" aria-hidden="true">
+					<path d="M7 6v12M19 6l-9 6 9 6V6Z" fill="currentColor"></path>
+				</svg>
+			</button>
+			<button
+				class="music__play"
+				type="button"
+				data-play
+				aria-label="播放背景音乐"
+				aria-pressed="false"
+			>
+				<svg class="music__icon music__icon--play" viewBox="0 0 24 24" aria-hidden="true">
+					<path d="M8 5.5v13l11-6.5-11-6.5Z" fill="currentColor"></path>
+				</svg>
+				<svg class="music__icon music__icon--pause" viewBox="0 0 24 24" aria-hidden="true">
+					<path d="M8 5h3v14H8zM13 5h3v14h-3z" fill="currentColor"></path>
+				</svg>
+			</button>
+			<button class="music__step" type="button" data-next aria-label="下一首">
+				<svg viewBox="0 0 24 24" aria-hidden="true">
+					<path d="M17 6v12M5 6l9 6-9 6V6Z" fill="currentColor"></path>
+				</svg>
+			</button>
+		</div>
 	</div>
+
 	<span class="music__eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+
 	<div class="music__bar" data-bar title="点一下可以跳到想听的地方">
 		<div class="music__progress" data-progress></div>
 	</div>
+
 	<p class="music__hint" data-hint hidden></p>
-	<audio data-audio src={site.music.src} preload="none" loop></audio>
+
+	<ol class="music__list" data-list></ol>
 </section>
 
 <style>
@@ -56,6 +67,7 @@ import { site } from "../data/site";
 		border-radius: var(--radius-sm);
 		object-fit: cover;
 		border: 1px solid var(--border);
+		flex-shrink: 0;
 	}
 
 	.music__meta {
@@ -76,6 +88,35 @@ import { site } from "../data/site";
 		font-size: var(--text-xs);
 		color: var(--text-dim);
 		font-variant-numeric: tabular-nums;
+	}
+
+	.music__controls {
+		display: flex;
+		align-items: center;
+		gap: var(--space-1);
+		flex-shrink: 0;
+	}
+
+	.music__step {
+		display: grid;
+		place-items: center;
+		width: 30px;
+		height: 30px;
+		border-radius: 50%;
+		color: var(--text-muted);
+		transition:
+			color var(--dur) var(--ease-soft),
+			transform var(--dur) var(--ease-spring);
+	}
+
+	.music__step svg {
+		width: 16px;
+		height: 16px;
+	}
+
+	.music__step:hover {
+		color: var(--text);
+		transform: scale(1.08);
 	}
 
 	.music__play {
@@ -200,122 +241,172 @@ import { site } from "../data/site";
 		font-size: var(--text-xs);
 		color: var(--text-dim);
 	}
+
+	.music__list {
+		margin: var(--space-4) 0 0;
+		padding: 0;
+		list-style: none;
+		max-height: 168px;
+		overflow-y: auto;
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+
+	.music__list:empty {
+		display: none;
+	}
+
+	.music__item {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		width: 100%;
+		padding: 6px 10px;
+		border-radius: var(--radius-xs);
+		font-size: var(--text-xs);
+		color: var(--text-muted);
+		text-align: left;
+		transition:
+			background var(--dur) var(--ease-soft),
+			color var(--dur) var(--ease-soft);
+	}
+
+	.music__item:hover {
+		background: rgba(255, 255, 255, 0.06);
+		color: var(--text);
+	}
+
+	.music__item.is-current {
+		color: var(--accent);
+		background: var(--gradient-soft);
+	}
+
+	.music__item-index {
+		font-variant-numeric: tabular-nums;
+		opacity: 0.6;
+	}
+
+	.music__item-title {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
 </style>
 
 <script>
+	import { site } from "../data/site";
+	import {
+		configureMusic,
+		loadRemotePlaylist,
+		nextMusic,
+		prevMusic,
+		seekMusic,
+		selectTrack,
+		subscribeMusic,
+		toggleMusic,
+		warmUpMusic,
+	} from "../scripts/music";
+
 	const format = (seconds: number) => {
-		if (!Number.isFinite(seconds)) return "00:00";
+		if (!Number.isFinite(seconds) || seconds <= 0) return "00:00";
 		const m = Math.floor(seconds / 60);
 		const s = Math.floor(seconds % 60);
 		return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 	};
 
+	let remoteRequested = false;
+
 	const setupMusic = () => {
 		const card = document.querySelector<HTMLElement>(".music");
-		const button = document.querySelector<HTMLButtonElement>("[data-play]");
-		const audio = document.querySelector<HTMLAudioElement>("[data-audio]");
-		const progress = document.querySelector<HTMLElement>("[data-progress]");
-		const time = document.querySelector<HTMLElement>("[data-time]");
-		const bar = document.querySelector<HTMLElement>("[data-bar]");
-		const hint = document.querySelector<HTMLElement>("[data-hint]");
-		if (!card || !audio || audio.dataset.bound === "1") return;
+		if (!card) return;
 
-		audio.dataset.bound = "1";
+		const cover = card.querySelector<HTMLImageElement>("[data-cover]");
+		const title = card.querySelector<HTMLElement>("[data-title]");
+		const time = card.querySelector<HTMLElement>("[data-time]");
+		const playButton = card.querySelector<HTMLButtonElement>("[data-play]");
+		const hint = card.querySelector<HTMLElement>("[data-hint]");
+		const bar = card.querySelector<HTMLElement>("[data-bar]");
+		const progress = card.querySelector<HTMLElement>("[data-progress]");
+		const list = card.querySelector<HTMLElement>("[data-list]");
 
-		const syncTime = () => {
-			if (!time) return;
-			time.textContent = `${format(audio.currentTime)} / ${format(audio.duration)}`;
-		};
+		// 有远程歌单的话，等用户「想听」的时候再去拉
+		if (site.music.api && !remoteRequested) {
+			remoteRequested = true;
+			warmUpMusic();
+			void loadRemotePlaylist(site.music.api, site.music.cover);
+		}
 
-		const setHint = (text: string) => {
-			if (!hint) return;
-			hint.textContent = text;
-			hint.hidden = !text;
-		};
+		if (card.dataset.bound !== "1") {
+			card.dataset.bound = "1";
+			card.addEventListener("pointerenter", warmUpMusic, { once: true });
 
-		const setPlaying = (playing: boolean) => {
-			card.classList.toggle("is-playing", playing);
-			button?.setAttribute("aria-pressed", String(playing));
-			button?.setAttribute("aria-label", playing ? "暂停背景音乐" : "播放背景音乐");
-		};
+			playButton?.addEventListener("click", () => toggleMusic());
+			card.querySelector("[data-prev]")?.addEventListener("click", () => prevMusic());
+			card.querySelector("[data-next]")?.addEventListener("click", () => nextMusic());
 
-		/*
-		 * 首屏完全不碰音频（整首 936KB，会拖慢进入速度）。
-		 * 但 `preload="none"` 的副作用是时长一直显示 00:00、点播放要等缓冲，
-		 * 所以在用户「伸手要音乐」的瞬间（鼠标移上来 / 键盘聚焦 / 触屏按下）再去取。
-		 */
-		const warmUp = () => {
-			if (audio.dataset.warm === "1") return;
-			audio.dataset.warm = "1";
-			audio.preload = "metadata";
-			audio.load();
-		};
+			bar?.addEventListener("click", (event) => {
+				const rect = bar.getBoundingClientRect();
+				const ratio = Math.min(Math.max((event.clientX - rect.left) / rect.width, 0), 1);
+				seekMusic(ratio);
+			});
+		}
 
-		card.addEventListener("pointerenter", warmUp, { once: true });
-		card.addEventListener("focusin", warmUp, { once: true });
-		card.addEventListener("touchstart", warmUp, { once: true, passive: true });
-
-		button?.addEventListener("click", async () => {
-			if (!audio.paused) {
-				audio.pause();
+		const unsubscribe = subscribeMusic((state) => {
+			if (!card.isConnected) {
+				unsubscribe();
 				return;
 			}
 
-			setHint(audio.readyState < 2 ? "加载中…" : "");
-			try {
-				await audio.play();
-				setHint("");
-			} catch (error) {
-				setHint("播放失败了，再点一下试试");
-				console.error("[music] 播放失败：", error);
+			const track = state.tracks[state.index];
+			card.classList.toggle("is-playing", state.playing);
+			playButton?.setAttribute("aria-pressed", String(state.playing));
+			playButton?.setAttribute("aria-label", state.playing ? "暂停背景音乐" : "播放背景音乐");
+
+			if (track) {
+				if (title) title.textContent = track.title;
+				if (cover && cover.getAttribute("src") !== track.cover) cover.src = track.cover;
 			}
-		});
 
-		audio.addEventListener("timeupdate", () => {
-			syncTime();
-			if (progress && audio.duration) {
-				progress.style.width = `${(audio.currentTime / audio.duration) * 100}%`;
+			if (time) time.textContent = `${format(state.time)} / ${format(state.duration)}`;
+			if (progress && state.duration > 0) {
+				progress.style.width = `${(state.time / state.duration) * 100}%`;
 			}
-		});
 
-		audio.addEventListener("loadedmetadata", syncTime);
-		// 用媒体事件同步状态：系统的播放/暂停键、锁屏控制也能让按钮跟着变
-		audio.addEventListener("play", () => setPlaying(true));
-		audio.addEventListener("playing", () => {
-			setPlaying(true);
-			setHint("");
-		});
-		audio.addEventListener("pause", () => setPlaying(false));
-		audio.addEventListener("ended", () => setPlaying(false));
-		audio.addEventListener("error", () => {
-			setPlaying(false);
-			setHint("音频加载失败，刷新一下试试");
-		});
+			const message = state.error || (!state.tracks.length ? "还没有歌单喵～" : "");
+			if (hint) {
+				hint.textContent = message;
+				hint.hidden = !message;
+			}
 
-		// 点进度条跳转
-		bar?.addEventListener("click", (event) => {
-			const duration = audio.duration;
-			if (!Number.isFinite(duration) || duration <= 0) return;
-			const rect = bar.getBoundingClientRect();
-			const ratio = Math.min(Math.max((event.clientX - rect.left) / rect.width, 0), 1);
-			const target = ratio * duration;
-			audio.currentTime = target;
-			syncTime();
+			if (list) {
+				list.replaceChildren(
+					...state.tracks.map((item, index) => {
+						const li = document.createElement("li");
+						const button = document.createElement("button");
+						button.type = "button";
+						button.className = `music__item${index === state.index ? " is-current" : ""}`;
+						button.dataset.track = String(index);
 
-			/*
-			 * Cloudflare 目前对静态资源不返回 Accept-Ranges，
-			 * 音频会被当成「不可跳转」的整段资源，拖动后可能又从头开始。
-			 * 这种情况明确告诉访客一声，别让人以为点了没反应。
-			 */
-			window.setTimeout(() => {
-				if (Math.abs(audio.currentTime - target) > 1.5) {
-					setHint("这首曲子暂时不支持拖动进度，让它自己放吧～");
-					window.setTimeout(() => setHint(""), 5000);
-				}
-			}, 500);
+						const number = document.createElement("span");
+						number.className = "music__item-index";
+						number.textContent = String(index + 1).padStart(2, "0");
+
+						const label = document.createElement("span");
+						label.className = "music__item-title";
+						label.textContent = item.title;
+
+						button.append(number, label);
+						button.addEventListener("click", () => selectTrack(index));
+						li.append(button);
+						return li;
+					}),
+				);
+			}
 		});
 	};
 
+	configureMusic([]);
 	setupMusic();
 	document.addEventListener("astro:page-load", setupMusic);
 </script>

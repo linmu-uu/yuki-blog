@@ -38,7 +38,20 @@ export const site = {
 	},
 	music: {
 		title: "正在播放",
-		track: "使一颗心免于哀伤（哼唱）",
-		src: "/audio/bgm.mp3",
+		/**
+		 * 远程歌单接口（主人自己的 token 链接）。
+		 * 留空就只用 public/audio/ 里的本地文件；
+		 * 填上之后会在用户第一次想听歌时懒加载，并缓存在本次会话里。
+		 */
+		api: "",
+		/**
+		 * 播放列表直接扫 public/audio/ 里的音频文件（往里面丢 mp3 就行）。
+		 * 这里只负责给文件起个好听的中文名：键可以是文件名或去掉扩展名的文件名。
+		 */
+		titles: {
+			"bgm.mp3": "使一颗心免于哀伤（哼唱）",
+		} as Record<string, string>,
+		/** 没有单独封面时用的默认封面 */
+		cover: "/audio/cover.webp",
 	},
 };

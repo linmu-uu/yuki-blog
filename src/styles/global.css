@@ -412,25 +412,37 @@ button {
    ========================================================================== */
 
 ::view-transition-old(root) {
-	animation: page-leave 200ms var(--ease-glide) both;
+	animation: page-leave 170ms var(--ease-glide) both;
 }
 
 ::view-transition-new(root) {
-	animation: page-enter 360ms var(--ease-glide) both;
+	animation: page-enter 320ms var(--ease-glide) both;
 }
 
 @keyframes page-leave {
 	to {
 		opacity: 0;
-		transform: translateY(-8px) scale(0.996);
+		transform: translateY(-6px) scale(0.998);
 	}
 }
 
 @keyframes page-enter {
 	from {
 		opacity: 0;
-		transform: translateY(12px) scale(0.994);
+		transform: translateY(9px) scale(0.997);
 	}
+}
+
+/*
+ * 切换时先让正文轻轻淡出，再让新页面淡入。
+ * 只动 opacity / transform，不碰布局，弱机也不掉帧。
+ */
+.page-fade {
+	transition: opacity 150ms var(--ease-soft);
+}
+
+html.is-leaving .page-fade {
+	opacity: 0.35;
 }
 
 /* 顶部栏与背景层固定住，不跟着页面一起动，避免闪烁 */

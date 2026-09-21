@@ -1,0 +1,324 @@
+---
+interface Mark {
+	/** YYYY-MM-DD（本地时区） */
+	date: string;
+	title: string;
+	href: string;
+}
+
+interface Props {
+	marks?: Mark[];
+	stats?: { posts: number; tags: number; gallery: number; days: number };
+}
+
+const { marks = [], stats } = Astro.props;
+---
+
+<section class="card calendar" data-calendar data-marks={JSON.stringify(marks)} style="--reveal-delay:200ms">
+	<header class="calendar__head">
+		<h2 class="section-title">日历</h2>
+		<div class="calendar__nav">
+			<button type="button" data-cal-prev aria-label="上个月">‹</button>
+			<span class="calendar__month" data-cal-month>—</span>
+			<button type="button" data-cal-next aria-label="下个月">›</button>
+		</div>
+	</header>
+
+	<div class="calendar__weekdays" aria-hidden="true">
+		<span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+	</div>
+
+	<div class="calendar__grid" data-cal-grid></div>
+
+	<p class="calendar__hint">
+		{marks.length ? "有文章的日子带小点，点一下就能看" : "还没有文章喵"}
+	</p>
+
+	{
+		stats && (
+			<dl class="calendar__stats">
+				<div>
+					<dt>文章</dt>
+					<dd>{stats.posts}</dd>
+				</div>
+				<div>
+					<dt>标签</dt>
+					<dd>{stats.tags}</dd>
+				</div>
+				<div>
+					<dt>相册图</dt>
+					<dd>{stats.gallery}</dd>
+				</div>
+				<div>
+					<dt>已运行</dt>
+					<dd>{stats.days} 天</dd>
+				</div>
+			</dl>
+		)
+	}
+</section>
+
+<style>
+	.calendar {
+		padding: var(--space-5);
+	}
+
+	.calendar__head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-3);
+	}
+
+	.calendar__nav {
+		display: flex;
+		align-items: center;
+		gap: 2px;
+	}
+
+	.calendar__nav button {
+		display: grid;
+		place-items: center;
+		width: 24px;
+		height: 24px;
+		border-radius: 50%;
+		color: var(--text-muted);
+		font-size: 15px;
+		line-height: 1;
+		transition:
+			color var(--dur) var(--ease-soft),
+			background var(--dur) var(--ease-soft);
+	}
+
+	.calendar__nav button:hover {
+		color: var(--text);
+		background: rgba(255, 255, 255, 0.08);
+	}
+
+	.calendar__month {
+		min-width: 74px;
+		text-align: center;
+		font-size: var(--text-xs);
+		color: var(--text-soft);
+		font-variant-numeric: tabular-nums;
+	}
+
+	.calendar__weekdays,
+	.calendar__grid {
+		display: grid;
+		grid-template-columns: repeat(7, 1fr);
+		gap: 2px;
+	}
+
+	.calendar__weekdays {
+		margin-top: var(--space-4);
+		font-size: 10px;
+		color: var(--text-dim);
+		text-align: center;
+	}
+
+	.calendar__grid {
+		margin-top: 6px;
+		transition: opacity 180ms var(--ease-soft);
+	}
+
+	.calendar__grid.is-switching {
+		opacity: 0;
+	}
+
+	.calendar__day {
+		position: relative;
+		display: grid;
+		place-items: center;
+		aspect-ratio: 1;
+		border-radius: var(--radius-xs);
+		font-size: var(--text-xs);
+		color: var(--text-muted);
+		font-variant-numeric: tabular-nums;
+		transition:
+			background var(--dur) var(--ease-soft),
+			color var(--dur) var(--ease-soft),
+			transform var(--dur) var(--ease-spring);
+	}
+
+	.calendar__day.is-empty {
+		visibility: hidden;
+	}
+
+	.calendar__day.is-marked {
+		color: var(--text);
+		background: rgba(var(--accent-rgb), 0.12);
+	}
+
+	.calendar__day.is-marked::after {
+		content: "";
+		position: absolute;
+		bottom: 3px;
+		width: 4px;
+		height: 4px;
+		border-radius: 50%;
+		background: var(--accent);
+		box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.9);
+	}
+
+	a.calendar__day:hover {
+		color: var(--text);
+		background: rgba(var(--accent-rgb), 0.22);
+		transform: translateY(-1px);
+	}
+
+	.calendar__day.is-today {
+		color: #0d1424;
+		background: var(--gradient-accent);
+		font-weight: 700;
+	}
+
+	.calendar__day.is-today::after {
+		background: #0d1424;
+		box-shadow: none;
+	}
+
+	.calendar__hint {
+		margin: var(--space-4) 0 0;
+		font-size: var(--text-xs);
+		color: var(--text-dim);
+	}
+
+	.calendar__stats {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: var(--space-3);
+		margin: var(--space-4) 0 0;
+		padding-top: var(--space-4);
+		border-top: 1px dashed var(--border);
+	}
+
+	.calendar__stats div {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: var(--space-2);
+	}
+
+	.calendar__stats dt {
+		font-size: var(--text-xs);
+		color: var(--text-dim);
+	}
+
+	.calendar__stats dd {
+		margin: 0;
+		font-size: var(--text-sm);
+		color: var(--text-soft);
+		font-variant-numeric: tabular-nums;
+	}
+</style>
+
+<script>
+	interface Mark {
+		date: string;
+		title: string;
+		href: string;
+	}
+
+	const setupCalendar = () => {
+		const root = document.querySelector<HTMLElement>("[data-calendar]");
+		if (!root) return;
+
+		const grid = root.querySelector<HTMLElement>("[data-cal-grid]");
+		const monthLabel = root.querySelector<HTMLElement>("[data-cal-month]");
+		if (!grid || !monthLabel || root.dataset.bound === "1") return;
+
+		root.dataset.bound = "1";
+
+		let marks: Mark[] = [];
+		try {
+			marks = JSON.parse(root.dataset.marks || "[]") as Mark[];
+		} catch {
+			marks = [];
+		}
+
+		const byDate = new Map(marks.map((mark) => [mark.date, mark]));
+		const today = new Date();
+		let view = new Date(today.getFullYear(), today.getMonth(), 1);
+
+		const iso = (date: Date) =>
+			`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+
+		const render = (animate: boolean) => {
+			const year = view.getFullYear();
+			const month = view.getMonth();
+			monthLabel.textContent = `${year} 年 ${month + 1} 月`;
+
+			const first = new Date(year, month, 1);
+			const days = new Date(year, month + 1, 0).getDate();
+			const offset = first.getDay();
+
+			const cells: HTMLElement[] = [];
+			for (let i = 0; i < offset; i += 1) {
+				const blank = document.createElement("span");
+				blank.className = "calendar__day is-empty";
+				cells.push(blank);
+			}
+
+			for (let day = 1; day <= days; day += 1) {
+				const date = new Date(year, month, day);
+				const key = iso(date);
+				const mark = byDate.get(key);
+
+				const className = [
+					"calendar__day",
+					mark ? "is-marked" : "",
+					key === iso(today) ? "is-today" : "",
+				]
+					.filter(Boolean)
+					.join(" ");
+
+				if (mark) {
+					const link = document.createElement("a");
+					link.className = className;
+					link.href = mark.href;
+					link.textContent = String(day);
+					link.title = mark.title;
+					cells.push(link);
+				} else {
+					const cell = document.createElement("span");
+					cell.className = className;
+					cell.textContent = String(day);
+					cells.push(cell);
+				}
+			}
+
+			if (!animate) {
+				grid.replaceChildren(...cells);
+				return;
+			}
+
+			grid.classList.add("is-switching");
+			window.setTimeout(() => {
+				grid.replaceChildren(...cells);
+				grid.classList.remove("is-switching");
+			}, 180);
+		};
+
+		root.querySelector("[data-cal-prev]")?.addEventListener("click", () => {
+			view = new Date(view.getFullYear(), view.getMonth() - 1, 1);
+			render(true);
+		});
+		root.querySelector("[data-cal-next]")?.addEventListener("click", () => {
+			view = new Date(view.getFullYear(), view.getMonth() + 1, 1);
+			render(true);
+		});
+
+		// 有文章时默认停在最近一篇的月份，没有就停在当月
+		const latest = marks.map((mark) => mark.date).sort().at(-1);
+		if (latest) {
+			const [y, m] = latest.split("-").map(Number);
+			view = new Date(y, (m ?? 1) - 1, 1);
+		}
+
+		render(false);
+	};
+
+	setupCalendar();
+	document.addEventListener("astro:page-load", setupCalendar);
+</script>

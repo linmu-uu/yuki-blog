@@ -46,11 +46,13 @@ export const gradientPresets: GradientPreset[] = [
 /**
  * 扫描 public/wallpaper/<kind>/ 下参与轮换的壁纸。
  *
- * 只收 `ba-<kind>-NN.avif` —— 也就是 npm run wallpapers:import 导入的、自己找的图。
+ * 收两类：
+ *   - `ba-<kind>-NN.avif`：npm run wallpapers:import 导入的、自己找的图
+ *   - `ai-<kind>-NN.avif`：npm run wallpapers:ai 处理好的 AI 原创二次元壁纸
  * 程序生成的纯渐变壁纸（orig-* 以及早期的 schale / millennium / halo / trinity）
  * 没有二次元人物，已经移出轮换；哪天想让它们回来，把前缀加进下面这个数组就行。
  */
-const ALLOWED_PREFIXES = ["ba-"];
+const ALLOWED_PREFIXES = ["ba-", "ai-"];
 
 function listWallpapers(kind: "desktop" | "mobile"): string[] {
 	try {
