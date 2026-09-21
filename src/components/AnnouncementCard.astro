@@ -1,0 +1,149 @@
+---
+import { site } from "../data/site";
+
+const { title, lead, body, linkText, linkUrl } = site.announcement;
+---
+
+<section class="card notice" data-reveal style="--reveal-delay:80ms">
+	<span class="notice__aura" aria-hidden="true"></span>
+
+	<header class="notice__head">
+		<span class="notice__mark" aria-hidden="true">
+			<svg viewBox="0 0 24 24">
+				<path
+					d="M12 1.5c.7 5.9 4.6 9.8 10.5 10.5C16.6 12.7 12.7 16.6 12 22.5 11.3 16.6 7.4 12.7 1.5 12 7.4 11.3 11.3 7.4 12 1.5Z"
+				></path>
+			</svg>
+		</span>
+		<span class="notice__label">{title}</span>
+	</header>
+
+	<p class="notice__lead">{lead}</p>
+	<p class="notice__text">{body}</p>
+
+	<a class="notice__link" href={linkUrl}>
+		<span>{linkText}</span>
+		<svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+			<path
+				d="M5 12h13M13 6l6 6-6 6"
+				stroke="currentColor"
+				stroke-width="1.8"
+				stroke-linecap="round"
+				stroke-linejoin="round"></path>
+		</svg>
+	</a>
+</section>
+
+<style>
+	.notice {
+		position: relative;
+		padding: var(--space-5);
+		overflow: hidden;
+		isolation: isolate;
+	}
+
+	/* 左上角一团柔光，让卡片有"发光"的感觉 */
+	.notice__aura {
+		position: absolute;
+		top: -60px;
+		left: -40px;
+		width: 180px;
+		height: 180px;
+		z-index: -1;
+		border-radius: 50%;
+		background: radial-gradient(circle, rgba(var(--accent-rgb), 0.3), transparent 68%);
+		filter: blur(10px);
+		pointer-events: none;
+	}
+
+	.notice__head {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		margin-bottom: var(--space-4);
+	}
+
+	.notice__mark {
+		display: grid;
+		place-items: center;
+		width: 18px;
+		height: 18px;
+		color: var(--accent-2);
+		filter: drop-shadow(0 0 8px rgba(95, 225, 255, 0.8));
+		animation: notice-sparkle 3.6s var(--ease-soft) infinite;
+	}
+
+	.notice__mark svg {
+		width: 100%;
+		height: 100%;
+		fill: currentColor;
+	}
+
+	@keyframes notice-sparkle {
+		0%,
+		100% {
+			opacity: 0.6;
+			transform: rotate(0deg) scale(0.92);
+		}
+		50% {
+			opacity: 1;
+			transform: rotate(45deg) scale(1.06);
+		}
+	}
+
+	.notice__label {
+		font-size: var(--text-xs);
+		letter-spacing: 0.32em;
+		color: var(--text-dim);
+	}
+
+	.notice__lead {
+		margin: 0 0 var(--space-2);
+		font-family: var(--font-display);
+		font-size: var(--text-lg);
+		font-weight: 700;
+		line-height: 1.5;
+		background: var(--gradient-b);
+		-webkit-background-clip: text;
+		background-clip: text;
+		color: transparent;
+	}
+
+	.notice__text {
+		margin: 0 0 var(--space-4);
+		font-size: var(--text-sm);
+		line-height: 1.9;
+		color: var(--text-muted);
+	}
+
+	.notice__link {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		font-size: var(--text-xs);
+		color: var(--accent-soft);
+		border-bottom: 1px solid rgba(var(--accent-rgb), 0.35);
+		padding-bottom: 2px;
+		transition:
+			color var(--dur) var(--ease-soft),
+			border-color var(--dur) var(--ease-soft),
+			gap var(--dur) var(--ease-spring);
+	}
+
+	.notice__link svg {
+		width: 14px;
+		height: 14px;
+	}
+
+	.notice__link:hover {
+		color: var(--text);
+		border-bottom-color: var(--accent-2);
+		gap: 10px;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.notice__mark {
+			animation: none;
+		}
+	}
+</style>

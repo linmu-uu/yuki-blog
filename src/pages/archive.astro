@@ -1,0 +1,232 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import PageHeader from "../components/PageHeader.astro";
+
+const allPosts = await getCollection("posts", ({ data }) => !data.draft);
+const posts = allPosts.sort((a, b) => b.data.published.valueOf() - a.data.published.valueOf());
+
+const years = new Map<number, typeof posts>();
+for (const post of posts) {
+	const year = post.data.published.getFullYear();
+	const bucket = years.get(year) ?? [];
+	bucket.push(post);
+	years.set(year, bucket);
+}
+
+const tagCounts = new Map<string, number>();
+for (const post of posts) {
+	for (const tag of post.data.tags) tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+}
+const tags = [...tagCounts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+
+const href = (id: string) => `/posts/${id.replace(/\.(md|mdx)$/, "")}/`;
+const dateLabel = (date: Date) =>
+	new Intl.DateTimeFormat("zh-CN", { month: "2-digit", day: "2-digit" }).format(date);
+---
+
+<BaseLayout title={`文章归档 - ${posts.length} 篇`} description="按时间浏览这个小窝里的所有文章">
+	<PageHeader title="文章归档" description={`目前一共 ${posts.length} 篇文章，按年份排列。`} />
+
+	<main class="shell page-body archive">
+		<div class="archive__tags" data-tags>
+			<button class="archive__tag is-active" type="button" data-tag="">全部</button>
+			{
+				tags.map(([name, count]) => (
+					<button class="archive__tag" type="button" data-tag={name}>
+						{name}
+						<span class="archive__tag-count">{count}</span>
+					</button>
+				))
+			}
+		</div>
+
+		{
+			[...years.entries()].map(([year, items]) => (
+				<section class="archive__year" data-reveal>
+					<h2 class="archive__year-title">
+						{year}
+						<span>{items.length} 篇</span>
+					</h2>
+					<ul class="archive__list">
+						{items.map((post) => (
+							<li class="archive__item" data-post-tags={post.data.tags.join(",")}>
+								<time class="archive__date" datetime={post.data.published.toISOString()}>
+									{dateLabel(post.data.published)}
+								</time>
+								<a class="archive__link" href={href(post.id)}>
+									{post.data.title}
+								</a>
+								<span class="archive__meta">
+									{post.data.tags.map((tag) => `#${tag}`).join(" ")}
+								</span>
+							</li>
+						))}
+					</ul>
+				</section>
+			))
+		}
+	</main>
+</BaseLayout>
+
+<style>
+	.archive__tags {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+		margin-bottom: var(--space-6);
+	}
+
+	.archive__tag {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		padding: 6px 14px;
+		border-radius: var(--radius-full);
+		border: 1px solid var(--border);
+		background: rgba(255, 255, 255, 0.03);
+		font-size: var(--text-xs);
+		color: var(--text-muted);
+		transition:
+			color var(--dur) var(--ease-soft),
+			border-color var(--dur) var(--ease-soft),
+			background var(--dur) var(--ease-soft);
+	}
+
+	.archive__tag:hover {
+		color: var(--text);
+		border-color: var(--border-strong);
+	}
+
+	.archive__tag.is-active {
+		color: #12101f;
+		background: var(--gradient-accent);
+		border-color: transparent;
+		font-weight: 600;
+	}
+
+	.archive__tag-count {
+		opacity: 0.65;
+	}
+
+	.archive__year + .archive__year {
+		margin-top: var(--space-7);
+	}
+
+	.archive__year-title {
+		display: flex;
+		align-items: baseline;
+		gap: var(--space-3);
+		margin: 0 0 var(--space-4);
+		font-family: var(--font-display);
+		font-size: 1.6rem;
+		background: var(--gradient-accent);
+		-webkit-background-clip: text;
+		background-clip: text;
+		color: transparent;
+	}
+
+	.archive__year-title span {
+		font-size: var(--text-xs);
+		font-weight: 400;
+		letter-spacing: 0.1em;
+		color: var(--text-dim);
+	}
+
+	.archive__list {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.archive__item {
+		display: grid;
+		grid-template-columns: 64px 1fr auto;
+		gap: var(--space-4);
+		align-items: baseline;
+		padding: var(--space-4) var(--space-3);
+		border-radius: var(--radius-sm);
+		border-bottom: 1px solid var(--border);
+		transition: background var(--dur) var(--ease-soft);
+	}
+
+	.archive__item:hover {
+		background: rgba(255, 255, 255, 0.03);
+	}
+
+	.archive__date {
+		font-size: var(--text-xs);
+		color: var(--text-dim);
+		font-variant-numeric: tabular-nums;
+		letter-spacing: 0.06em;
+	}
+
+	.archive__link {
+		font-size: var(--text-base);
+		color: var(--text-soft);
+		transition: color var(--dur) var(--ease-soft);
+	}
+
+	.archive__item:hover .archive__link {
+		color: var(--accent-soft);
+	}
+
+	.archive__meta {
+		font-size: var(--text-xs);
+		color: var(--text-dim);
+	}
+
+	@media (max-width: 768px) {
+		.archive__item {
+			grid-template-columns: 56px 1fr;
+			gap: var(--space-3);
+		}
+
+		.archive__meta {
+			grid-column: 2;
+		}
+	}
+</style>
+
+<script>
+	const setupArchive = () => {
+		const container = document.querySelector<HTMLElement>("[data-tags]");
+		if (!container || container.dataset.bound === "1") return;
+		container.dataset.bound = "1";
+
+		const buttons = container.querySelectorAll<HTMLButtonElement>("[data-tag]");
+		const items = document.querySelectorAll<HTMLElement>("[data-post-tags]");
+		const sections = document.querySelectorAll<HTMLElement>(".archive__year");
+
+		const apply = (tag: string) => {
+			for (const button of buttons) {
+				button.classList.toggle("is-active", button.dataset.tag === tag);
+			}
+			for (const item of items) {
+				const list = (item.dataset.postTags ?? "").split(",");
+				item.hidden = Boolean(tag) && !list.includes(tag);
+			}
+			for (const section of sections) {
+				const visible = section.querySelectorAll("[data-post-tags]:not([hidden])").length;
+				section.hidden = visible === 0;
+			}
+		};
+
+		for (const button of buttons) {
+			button.addEventListener("click", () => {
+				const tag = button.dataset.tag ?? "";
+				apply(tag);
+				const url = new URL(window.location.href);
+				if (tag) url.searchParams.set("tag", tag);
+				else url.searchParams.delete("tag");
+				window.history.replaceState({}, "", url);
+			});
+		}
+
+		const initial = new URL(window.location.href).searchParams.get("tag");
+		if (initial) apply(initial);
+	};
+
+	setupArchive();
+	document.addEventListener("astro:page-load", setupArchive);
+</script>

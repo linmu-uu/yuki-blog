@@ -1,0 +1,50 @@
+---
+import { site } from "../data/site";
+
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+	<div class="shell site-footer__inner">
+		<p class="site-footer__copy">© {year} {site.title} · 用 Astro 一点点搭起来的小窝</p>
+		<div class="site-footer__links">
+			<a href="/about">关于</a>
+			<a href="/friends">友链</a>
+			<a href="/guestbook">留言</a>
+		</div>
+	</div>
+</footer>
+
+<style>
+	.site-footer {
+		margin-top: var(--space-8);
+		border-top: 1px solid var(--border);
+		background: rgba(5, 4, 9, 0.6);
+	}
+
+	.site-footer__inner {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-4);
+		padding-block: var(--space-5);
+		flex-wrap: wrap;
+	}
+
+	.site-footer__copy {
+		margin: 0;
+		font-size: var(--text-xs);
+		color: var(--text-dim);
+	}
+
+	.site-footer__links {
+		display: flex;
+		gap: var(--space-4);
+		font-size: var(--text-xs);
+		color: var(--text-muted);
+	}
+
+	.site-footer__links a:hover {
+		color: var(--accent-soft);
+	}
+</style>

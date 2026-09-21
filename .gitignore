@@ -1,0 +1,17 @@
+# 依赖
+node_modules/
+
+# 构建产物（每次 npm run deploy 会重新生成）
+dist/
+.astro/
+
+# Wrangler 本地状态
+.wrangler/
+.dev.vars
+
+# 系统与编辑器
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/

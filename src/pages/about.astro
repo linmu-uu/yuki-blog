@@ -1,0 +1,169 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import PageHeader from "../components/PageHeader.astro";
+import { site } from "../data/site";
+import "../styles/prose.css";
+---
+
+<BaseLayout title="关于" description="关于 YUKI 和这个小窝">
+	<PageHeader title="关于我" description="一个在数字世界里安静记录的人" />
+
+	<main class="shell page-body">
+		<div class="about">
+			<aside class="about__profile card" data-reveal>
+				<div class="about__avatar">
+					<img src={site.avatar} alt="" width="112" height="112" />
+				</div>
+				<h2 class="about__name">{site.author}</h2>
+				<p class="about__bio">{site.bio}</p>
+				<ul class="about__links">
+					{
+						site.profileLinks.map((link) => (
+							<li>
+								<a href={link.url} target="_blank" rel="noreferrer noopener">
+									{link.name}
+								</a>
+							</li>
+						))
+					}
+				</ul>
+			</aside>
+
+			<div class="about__content prose" data-reveal style="--reveal-delay:80ms">
+				<h2>你好，我是 YUKI</h2>
+				<p>
+					一个在数字世界里默默无闻的小叶子。喜欢玩的游戏有 <strong>MC</strong>、
+					<strong>CS2</strong>、<strong>卡拉彼丘</strong> 和 <strong>蔚蓝档案</strong>。
+				</p>
+
+				<h2>关于本站</h2>
+				<p>
+					这个网站用 <strong>Astro</strong> 构建。最开始用的是
+					<a href="https://github.com/CuteLeaf/Firefly" target="_blank" rel="noreferrer noopener"
+						>Firefly</a
+					>
+					主题（它是基于
+					<a href="https://github.com/saicaca/fuwari" target="_blank" rel="noreferrer noopener">Fuwari</a
+					> 的二次开发），后来干脆推倒重来，自己做了一套主题：保留 Firefly 那套好用的双侧边栏布局，视觉换成暗色霓虹加樱花粒子。
+				</p>
+				<p>
+					整个站是静态生成后部署在 Cloudflare 上的，评论系统用的是自建的 Twikoo 后端（Cloudflare
+					Workers + D1），不依赖任何第三方评论服务。
+				</p>
+
+				<h2>联系方式</h2>
+				<ul>
+					<li>
+						💻 GitHub：<a href="https://github.com/linmu-uu" target="_blank" rel="noreferrer noopener"
+							>linmu-uu</a
+						>
+					</li>
+					<li>
+						✉️ Email：<a href="mailto:2116943621@qq.com">2116943621@qq.com</a>
+					</li>
+					<li>
+						🐧 QQ 交流群：<a href="https://qm.qq.com/q/ZGsFa8qX2G" target="_blank" rel="noreferrer noopener"
+							>1087127207</a
+						>
+					</li>
+					<li>
+						📺 BiliBili：<a
+							href="https://space.bilibili.com/1612903352"
+							target="_blank"
+							rel="noreferrer noopener">YUKI 的 B 站</a
+						>
+					</li>
+				</ul>
+
+				<hr />
+				<p><em>感谢你的来访！希望在这里能找到对你有用的内容！</em></p>
+			</div>
+		</div>
+	</main>
+</BaseLayout>
+
+<style>
+	.about {
+		display: grid;
+		grid-template-columns: 300px minmax(0, 1fr);
+		gap: var(--space-6);
+		align-items: start;
+	}
+
+	.about__profile {
+		padding: var(--space-5);
+		text-align: center;
+		position: sticky;
+		top: calc(var(--header-height) + var(--space-4));
+	}
+
+	.about__avatar {
+		width: 112px;
+		height: 112px;
+		margin: 0 auto var(--space-4);
+		border-radius: 50%;
+		padding: 3px;
+		background: conic-gradient(from 140deg, #128afa, #5fe1ff, #ffe08a, #128afa);
+		box-shadow: 0 16px 40px -20px rgba(var(--accent-rgb), 0.8);
+	}
+
+	.about__avatar img {
+		width: 100%;
+		height: 100%;
+		border-radius: 50%;
+		object-fit: cover;
+	}
+
+	.about__name {
+		margin: 0 0 var(--space-2);
+		font-size: var(--text-xl);
+	}
+
+	.about__bio {
+		margin: 0 0 var(--space-4);
+		font-size: var(--text-sm);
+		color: var(--text-muted);
+	}
+
+	.about__links {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: var(--space-2);
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.about__links a {
+		display: inline-block;
+		padding: 5px 12px;
+		border-radius: var(--radius-full);
+		border: 1px solid var(--border);
+		background: rgba(255, 255, 255, 0.03);
+		font-size: var(--text-xs);
+		color: var(--text-muted);
+		transition:
+			color var(--dur) var(--ease-soft),
+			border-color var(--dur) var(--ease-soft);
+	}
+
+	.about__links a:hover {
+		color: var(--text);
+		border-color: rgba(var(--accent-rgb), 0.5);
+	}
+
+	.about__content {
+		max-width: 760px;
+	}
+
+	@media (max-width: 1024px) {
+		.about {
+			grid-template-columns: minmax(0, 1fr);
+		}
+
+		.about__profile {
+			position: static;
+		}
+	}
+</style>

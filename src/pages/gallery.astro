@@ -1,0 +1,238 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import PageHeader from "../components/PageHeader.astro";
+import { albums, galleryThumb } from "../data/gallery";
+
+const total = albums.reduce((sum, album) => sum + album.images.length, 0);
+---
+
+<BaseLayout title="相册" description="把喜欢的画面收进这里">
+	<PageHeader
+		title="相册"
+		description={`${albums.length} 个相册，${total} 张图。点开可以放大看。`}
+	/>
+
+	<main class="shell page-body">
+		{
+			albums.map((album) => (
+				<section class="album" data-reveal>
+					<header class="album__head">
+						<div class="album__cover">
+							<img src={galleryThumb(album.cover)} alt="" width="120" height="120" loading="lazy" />
+						</div>
+						<div class="album__info">
+							<h2 class="album__name">{album.name}</h2>
+							<p class="album__desc">{album.description}</p>
+							<p class="album__meta">
+								<span>{album.date}</span>
+								<span>{album.location}</span>
+								<span>{album.images.length} 张</span>
+							</p>
+							<ul class="album__tags">
+								{album.tags.map((tag) => (
+									<li>#{tag}</li>
+								))}
+							</ul>
+						</div>
+					</header>
+
+					<div class="album__grid">
+						{album.images.map((src) => (
+							<button class="album__item" type="button" data-full={src} aria-label="放大查看">
+								<img src={galleryThumb(src)} alt="" loading="lazy" decoding="async" />
+							</button>
+						))}
+					</div>
+				</section>
+			))
+		}
+	</main>
+
+	<dialog class="lightbox" data-lightbox>
+		<button class="lightbox__close" type="button" data-close aria-label="关闭">×</button>
+		<img class="lightbox__image" data-lightbox-image src="" alt="" />
+	</dialog>
+</BaseLayout>
+
+<style>
+	.album + .album {
+		margin-top: var(--space-8);
+	}
+
+	.album__head {
+		display: flex;
+		align-items: center;
+		gap: var(--space-5);
+		padding: var(--space-4);
+		margin-bottom: var(--space-5);
+		border: 1px solid var(--border);
+		border-radius: var(--radius);
+		background: var(--surface);
+		backdrop-filter: blur(12px);
+	}
+
+	.album__cover {
+		width: 120px;
+		height: 120px;
+		border-radius: var(--radius-sm);
+		overflow: hidden;
+		flex-shrink: 0;
+		border: 1px solid var(--border);
+	}
+
+	.album__cover img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+
+	.album__name {
+		margin: 0;
+		font-family: var(--font-display);
+		font-size: 1.5rem;
+		font-weight: 700;
+	}
+
+	.album__desc {
+		margin: var(--space-2) 0 0;
+		font-size: var(--text-sm);
+		line-height: 1.7;
+		color: var(--text-muted);
+	}
+
+	.album__meta {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-4);
+		margin: var(--space-3) 0 0;
+		font-size: var(--text-xs);
+		color: var(--text-dim);
+		letter-spacing: 0.06em;
+	}
+
+	.album__tags {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-3);
+		margin: var(--space-3) 0 0;
+		padding: 0;
+		list-style: none;
+		font-size: var(--text-xs);
+		color: var(--accent-3);
+	}
+
+	.album__grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+		gap: var(--space-3);
+	}
+
+	.album__item {
+		padding: 0;
+		overflow: hidden;
+		aspect-ratio: 3 / 4;
+		border-radius: var(--radius-sm);
+		border: 1px solid var(--border);
+		background: rgba(255, 255, 255, 0.03);
+		transition:
+			transform var(--dur) var(--ease-out),
+			border-color var(--dur) var(--ease-soft),
+			box-shadow var(--dur) var(--ease-soft);
+	}
+
+	.album__item img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		transition: transform var(--dur-slow) var(--ease-out);
+	}
+
+	.album__item:hover {
+		transform: translateY(-4px);
+		border-color: rgba(var(--accent-rgb), 0.45);
+		box-shadow: var(--glow-accent);
+	}
+
+	.album__item:hover img {
+		transform: scale(1.06);
+	}
+
+	.lightbox {
+		max-width: 92vw;
+		max-height: 92vh;
+		padding: 0;
+		border: 1px solid var(--border-strong);
+		border-radius: var(--radius);
+		background: rgba(8, 7, 15, 0.92);
+		backdrop-filter: blur(18px);
+		overflow: visible;
+	}
+
+	.lightbox::backdrop {
+		background: rgba(4, 3, 9, 0.82);
+		backdrop-filter: blur(6px);
+	}
+
+	.lightbox__image {
+		display: block;
+		max-width: 86vw;
+		max-height: 86vh;
+		border-radius: calc(var(--radius) - 2px);
+	}
+
+	.lightbox__close {
+		position: absolute;
+		top: -14px;
+		right: -14px;
+		width: 34px;
+		height: 34px;
+		border-radius: 50%;
+		border: 1px solid var(--border-strong);
+		background: rgba(20, 18, 32, 0.95);
+		color: var(--text);
+		font-size: 18px;
+		line-height: 1;
+		display: grid;
+		place-items: center;
+	}
+
+	@media (max-width: 768px) {
+		.album__head {
+			flex-direction: column;
+			align-items: flex-start;
+		}
+
+		.album__grid {
+			grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+		}
+	}
+</style>
+
+<script>
+	const setupGallery = () => {
+		const dialog = document.querySelector<HTMLDialogElement>("[data-lightbox]");
+		const target = document.querySelector<HTMLImageElement>("[data-lightbox-image]");
+		if (!dialog) return;
+
+		if (dialog.dataset.bound !== "1") {
+			dialog.dataset.bound = "1";
+			dialog.addEventListener("click", (event) => {
+				if (event.target === dialog) dialog.close();
+			});
+			dialog.querySelector("[data-close]")?.addEventListener("click", () => dialog.close());
+		}
+
+		for (const item of document.querySelectorAll<HTMLButtonElement>("[data-full]")) {
+			if (item.dataset.bound === "1") continue;
+			item.dataset.bound = "1";
+			item.addEventListener("click", () => {
+				if (!target) return;
+				target.src = item.dataset.full ?? "";
+				dialog.showModal();
+			});
+		}
+	};
+
+	setupGallery();
+	document.addEventListener("astro:page-load", setupGallery);
+</script>

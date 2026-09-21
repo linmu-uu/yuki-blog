@@ -1,0 +1,55 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import PageHeader from "../components/PageHeader.astro";
+import Comment from "../components/Comment.astro";
+import { site } from "../data/site";
+
+const rules = [
+	"请保持友善和尊重，营造良好的交流氛围",
+	"欢迎分享你的想法，也可以提出对网站的建议",
+	"你的每一条留言都是对我最大的支持 ✨",
+];
+---
+
+<BaseLayout title="留言板" description="在这里留下你的足迹" preconnect={[site.twikooApi]}>
+	<PageHeader title="留言板" description="在这里留下你的足迹" />
+
+	<main class="shell page-body page-body--narrow">
+		<ul class="rules card" data-reveal>
+			{
+				rules.map((rule) => (
+					<li>{rule}</li>
+				))
+			}
+		</ul>
+
+		<Comment title="写点什么" />
+	</main>
+</BaseLayout>
+
+<style>
+	.rules {
+		margin: 0 0 var(--space-6);
+		padding: var(--space-5) var(--space-5) var(--space-5) var(--space-6);
+		list-style: none;
+		font-size: var(--text-sm);
+		line-height: 2;
+		color: var(--text-muted);
+	}
+
+	.rules li {
+		position: relative;
+	}
+
+	.rules li::before {
+		content: "";
+		position: absolute;
+		left: -18px;
+		top: 0.85em;
+		width: 6px;
+		height: 6px;
+		border-radius: 50%;
+		background: var(--accent);
+		box-shadow: 0 0 12px rgba(var(--accent-rgb), 0.8);
+	}
+</style>

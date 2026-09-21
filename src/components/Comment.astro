@@ -1,0 +1,154 @@
+---
+import { site } from "../data/site";
+
+interface Props {
+	title?: string;
+}
+
+const { title = "留言" } = Astro.props;
+---
+
+<section class="comments" id="comments">
+	<h2 class="section-title">{title}</h2>
+	<div id="tcomment" class="comments__mount" data-comments-mount>评论加载中…</div>
+</section>
+
+<style>
+	.comments {
+		margin-top: var(--space-7);
+	}
+
+	.comments__mount {
+		min-height: 120px;
+	}
+
+	/* 还没开始加载时的占位文案（Twikoo 接管后会清掉） */
+	.comments__mount:not([data-ready="1"]) {
+		font-size: var(--text-sm);
+		color: var(--text-dim);
+	}
+</style>
+
+<script>
+	import { site } from "../data/site";
+
+	const ENV_ID = site.twikooApi;
+	const STYLES = ["/assets/css/twikoo.css", "/assets/css/twikoo-theme.css"];
+	const SCRIPT = "/assets/js/twikoo.nocss.js";
+
+	interface TwikooGlobal {
+		init: (options: Record<string, unknown>) => Promise<unknown>;
+	}
+
+	/**
+	 * 评论是最重的一块资源（JS 约 170KB + 样式），所以不做首屏加载：
+	 * 等留言区快滚进视口时再把资源插进来，首页和文章首屏就省下了这笔开销。
+	 */
+	let assetsPromise: Promise<void> | null = null;
+
+	const loadAssets = () => {
+		if (assetsPromise) return assetsPromise;
+
+		assetsPromise = new Promise<void>((resolve) => {
+			for (const href of STYLES) {
+				if (document.querySelector(`link[href="${href}"]`)) continue;
+				const link = document.createElement("link");
+				link.rel = "stylesheet";
+				link.href = href;
+				document.head.appendChild(link);
+			}
+
+			if (document.querySelector(`script[src="${SCRIPT}"]`)) {
+				resolve();
+				return;
+			}
+
+			const script = document.createElement("script");
+			script.src = SCRIPT;
+			script.async = true;
+			script.addEventListener("load", () => resolve(), { once: true });
+			script.addEventListener("error", () => resolve(), { once: true });
+			document.head.appendChild(script);
+		});
+
+		return assetsPromise;
+	};
+
+	const twikooGlobal = () => (window as unknown as { twikoo?: TwikooGlobal }).twikoo;
+
+	const waitForGlobal = () =>
+		new Promise<TwikooGlobal | null>((resolve) => {
+			let tries = 0;
+			const check = () => {
+				const global = twikooGlobal();
+				if (global) {
+					resolve(global);
+					return;
+				}
+				tries += 1;
+				if (tries > 80) {
+					resolve(null);
+					return;
+				}
+				window.setTimeout(check, 120);
+			};
+			check();
+		});
+
+	const currentPath = () => {
+		const path = window.location.pathname;
+		return path.endsWith("/") && path.length > 1 ? path.slice(0, -1) : path;
+	};
+
+	const boot = async () => {
+		const mount = document.getElementById("tcomment");
+		if (!mount || mount.dataset.ready === "1") return;
+		mount.dataset.ready = "1";
+		mount.textContent = "";
+
+		await loadAssets();
+		const global = await waitForGlobal();
+		if (!global) {
+			mount.textContent = "评论加载失败，刷新一下试试喵";
+			return;
+		}
+
+		try {
+			await global.init({ envId: ENV_ID, el: "#tcomment", path: currentPath(), lang: "zh-CN" });
+		} catch (error) {
+			console.error("[Twikoo] 初始化失败：", error);
+		}
+	};
+
+	const observeComments = () => {
+		const section = document.getElementById("comments");
+		if (!section) return;
+
+		// 这次会话里已经加载过评论脚本了，直接开
+		if (document.querySelector(`script[src="${SCRIPT}"]`)) {
+			void boot();
+			return;
+		}
+
+		if (!("IntersectionObserver" in window)) {
+			void boot();
+			return;
+		}
+
+		const observer = new IntersectionObserver(
+			(entries) => {
+				for (const entry of entries) {
+					if (!entry.isIntersecting) continue;
+					observer.disconnect();
+					void boot();
+				}
+			},
+			{ rootMargin: "600px 0px" },
+		);
+
+		observer.observe(section);
+	};
+
+	observeComments();
+	document.addEventListener("astro:page-load", observeComments);
+</script>

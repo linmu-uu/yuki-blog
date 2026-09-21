@@ -1,0 +1,116 @@
+---
+/**
+ * 飘落花瓣层
+ *
+ * 用纯 CSS 动画实现，不依赖 requestAnimationFrame，
+ * 所以省电模式、无 GPU、后台标签页等情况下也不会停止。
+ * 每片花瓣的位置、大小、速度、旋转、漂移都是随机的，看起来更自然。
+ */
+
+// 花瓣数量与合成开销直接相关：16 片在视觉上已经够密，
+// 手机上再隐藏一半（见下面的媒体查询），减少 GPU 合成压力
+const COUNT = 16;
+
+// 用固定种子的伪随机，保证同一次构建里服务端和客户端一致
+const petals = Array.from({ length: COUNT }, (_, index) => {
+	const rand = (seed: number) => {
+		const value = Math.sin(index * 12.9898 + seed * 78.233) * 43758.5453;
+		return value - Math.floor(value);
+	};
+
+	const duration = 13 + rand(1) * 13;
+
+	return {
+		left: Number((rand(2) * 100).toFixed(2)),
+		size: Number((9 + rand(3) * 15).toFixed(1)),
+		duration: Number(duration.toFixed(2)),
+		delay: Number((-rand(4) * duration).toFixed(2)),
+		drift: Number(((rand(5) - 0.5) * 160).toFixed(1)),
+		alpha: Number((0.28 + rand(6) * 0.34).toFixed(2)),
+		spin: Number((220 + rand(7) * 420).toFixed(0)),
+		hue: rand(8) > 0.72 ? "var(--halo)" : rand(9) > 0.45 ? "var(--accent-soft)" : "var(--accent-2)",
+	};
+});
+---
+
+<div class="petal-layer" aria-hidden="true">
+	{
+		petals.map((petal) => (
+			<span
+				class="petal"
+				style={[
+					`--left:${petal.left}%`,
+					`--size:${petal.size}px`,
+					`--dur:${petal.duration}s`,
+					`--delay:${petal.delay}s`,
+					`--drift:${petal.drift}px`,
+					`--alpha:${petal.alpha}`,
+					`--spin:${petal.spin}deg`,
+					`--tint:${petal.hue}`,
+				].join(";")}
+			/>
+		))
+	}
+</div>
+
+<style>
+	.petal-layer {
+		position: fixed;
+		inset: 0;
+		/* 放在内容之上、卡片之下：英雄区大图挡不住它，卡片文字也不会被盖住 */
+		z-index: 1;
+		pointer-events: none;
+		overflow: hidden;
+		/* 把这一层的重绘限制在自己内部，别连累整页 */
+		contain: layout style paint;
+	}
+
+	.petal {
+		position: absolute;
+		top: -8vh;
+		left: var(--left);
+		width: var(--size);
+		height: calc(var(--size) * 0.78);
+		background: var(--tint);
+		border-radius: 62% 38% 55% 45% / 55% 62% 38% 45%;
+		opacity: 0;
+		/* 用 box-shadow 代替 filter: drop-shadow —— 同样有柔光，但少一次滤镜合成 */
+		box-shadow: 0 0 7px rgba(150, 210, 255, 0.55);
+		will-change: transform, opacity;
+		animation: petal-fall var(--dur) linear var(--delay) infinite;
+	}
+
+	/* 窄屏只留一半花瓣，滚动时更稳 */
+	@media (max-width: 768px) {
+		.petal:nth-child(even) {
+			display: none;
+		}
+	}
+
+	@keyframes petal-fall {
+		0% {
+			transform: translate3d(0, -10vh, 0) rotate(0deg);
+			opacity: 0;
+		}
+		6% {
+			opacity: var(--alpha);
+		}
+		50% {
+			transform: translate3d(calc(var(--drift) * 0.55), 52vh, 0) rotate(calc(var(--spin) * 0.5));
+			opacity: var(--alpha);
+		}
+		94% {
+			opacity: var(--alpha);
+		}
+		100% {
+			transform: translate3d(var(--drift), 112vh, 0) rotate(var(--spin));
+			opacity: 0;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.petal-layer {
+			display: none;
+		}
+	}
+</style>

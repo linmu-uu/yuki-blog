@@ -1,0 +1,330 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import PageHeader from "../components/PageHeader.astro";
+import { moments } from "../data/moments";
+import { site } from "../data/site";
+import { galleryThumb } from "../data/gallery";
+
+const items = moments.map((moment) => {
+	const [datePart, timePart = ""] = moment.date.split(" ");
+	const [year, month, day] = datePart.split("-");
+	return {
+		...moment,
+		dayLabel: `${Number(month)} 月 ${Number(day)} 日`,
+		yearLabel: year,
+		timePart,
+	};
+});
+---
+
+<BaseLayout title="动态" description="随手记下的小事" preconnect={[site.momentsApi]}>
+	<PageHeader title="动态" description="随手记下的小事，不写成文章的那些话。" meta={`共 ${items.length} 条`} />
+
+	<main class="shell page-body moments">
+		<div class="moments__body">
+			<div class="moments__rail" aria-hidden="true"></div>
+
+			<ol class="moments__list" id="moments-list">
+				{
+					items.map((item, index) => (
+					<li class="moment" data-reveal style={`--reveal-delay:${index * 80}ms`}>
+						<div class="moment__time">
+							<time datetime={item.date}>
+								<span class="moment__day">{item.dayLabel}</span>
+								<span class="moment__clock">{item.timePart}</span>
+							</time>
+						</div>
+
+						<span class="moment__dot" aria-hidden="true" />
+
+						<article class="card moment__card">
+							<header class="moment__head">
+								{item.mood && <span class="moment__mood">{item.mood}</span>}
+								{item.tags?.map((tag) => <span class="moment__tag">#{tag}</span>)}
+							</header>
+
+							<p class="moment__text">{item.content}</p>
+
+							{item.images && item.images.length > 0 && (
+								<div class="moment__images" data-count={item.images.length}>
+									{item.images.map((src) => (
+										<img src={galleryThumb(src)} alt="" loading="lazy" decoding="async" />
+									))}
+								</div>
+							)}
+						</article>
+					</li>
+					))
+				}
+			</ol>
+		</div>
+
+		<p class="moments__empty" id="moments-empty" hidden>这里还空空的喵～</p>
+	</main>
+</BaseLayout>
+
+<script>
+	import { site } from "../data/site";
+
+	interface RemoteMoment {
+		id: number;
+		date: string;
+		content: string;
+		mood: string;
+		tags: string[];
+		images: string[];
+	}
+
+	const escapeHtml = (text: string) =>
+		text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+	/** 相册图走缩略图（网格里只显示两三百像素），动态后端上传的图保持原样 */
+	const thumbSrc = (src: string) =>
+		src.startsWith("/gallery/") && !src.includes("-thumb.")
+			? src.replace(/\.avif$/, "-thumb.avif")
+			: src;
+
+	/**
+	 * Astro 的 scoped 样式靠 `data-astro-cid-*` 属性匹配元素。
+	 * 用 innerHTML 重新渲染出来的节点没有这个属性，样式会整个失效，
+	 * 所以每次重绘都要手动补上。
+	 */
+	const applyScope = (root: Element | null) => {
+		if (!root) return;
+		const attribute = Array.from(root.attributes)
+			.map((item) => item.name)
+			.find((name) => name.startsWith("data-astro-cid-"));
+		if (!attribute) return;
+		root.querySelectorAll("*").forEach((element) => element.setAttribute(attribute, ""));
+	};
+
+	const renderItem = (moment: RemoteMoment, index: number) => {
+		const [datePart, timePart = ""] = moment.date.split(" ");
+		const [, month, day] = datePart.split("-");
+		const tags = (moment.tags ?? []).map((tag) => `<span class="moment__tag">#${escapeHtml(tag)}</span>`).join("");
+		const mood = moment.mood ? `<span class="moment__mood">${escapeHtml(moment.mood)}</span>` : "";
+		const images =
+			moment.images?.length > 0
+				? `<div class="moment__images" data-count="${moment.images.length}">${moment.images
+						.map((src) => `<img src="${thumbSrc(src)}" alt="" loading="lazy" decoding="async">`)
+						.join("")}</div>`
+				: "";
+
+		return `<li class="moment is-visible" style="--reveal-delay:${index * 80}ms">
+			<div class="moment__time"><time datetime="${moment.date}">
+				<span class="moment__day">${Number(month)} 月 ${Number(day)} 日</span>
+				<span class="moment__clock">${timePart}</span>
+			</time></div>
+			<span class="moment__dot" aria-hidden="true"></span>
+			<article class="card moment__card">
+				${mood || tags ? `<header class="moment__head">${mood}${tags}</header>` : ""}
+				<p class="moment__text">${escapeHtml(moment.content)}</p>
+				${images}
+			</article>
+		</li>`;
+	};
+
+	async function loadMoments() {
+		const list = document.getElementById("moments-list");
+		const empty = document.getElementById("moments-empty");
+		if (!list) return;
+
+		try {
+			const response = await fetch(`${site.momentsApi}/api/moments`, { cache: "no-store" });
+			if (!response.ok) return;
+			const data = (await response.json()) as RemoteMoment[];
+
+			if (!Array.isArray(data) || data.length === 0) {
+				list.innerHTML = "";
+				if (empty) empty.hidden = false;
+				return;
+			}
+
+			if (empty) empty.hidden = true;
+			list.innerHTML = data.map(renderItem).join("");
+			applyScope(list);
+		} catch {
+			// 拉不到就保留构建时渲染的那几条（禁用 JS / 断网时也看得到）
+		}
+	}
+
+	loadMoments();
+	document.addEventListener("astro:page-load", loadMoments);
+</script>
+
+<style>
+	.moments {
+		position: relative;
+		max-width: 900px;
+	}
+
+	/* 时间轴外层：竖线以它为定位参照，左边缘正好和列表对齐 */
+	.moments__body {
+		position: relative;
+	}
+
+	/* 左侧时间轴竖线 */
+	.moments__rail {
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		/* 时间列 132px + 光点列（36px）的中点 18px − 竖线宽度的一半 */
+		left: 149px;
+		width: 2px;
+		border-radius: var(--radius-full);
+		background: linear-gradient(
+			180deg,
+			rgba(var(--accent-rgb), 0.55),
+			rgba(95, 225, 255, 0.3) 45%,
+			rgba(var(--halo-rgb), 0.12) 100%
+		);
+	}
+
+	.moments__list {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.moment {
+		position: relative;
+		display: grid;
+		grid-template-columns: 132px 36px minmax(0, 1fr);
+		align-items: start;
+	}
+
+	.moment + .moment {
+		margin-top: var(--space-5);
+	}
+
+	.moment__time {
+		padding-top: 14px;
+		text-align: right;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.moment__day {
+		display: block;
+		font-size: var(--text-sm);
+		color: var(--text-soft);
+	}
+
+	.moment__clock {
+		display: block;
+		margin-top: 2px;
+		font-size: var(--text-xs);
+		color: var(--text-dim);
+	}
+
+	/* 时间轴上的光点 */
+	.moment__dot {
+		position: relative;
+		z-index: 1;
+		display: block;
+		width: 12px;
+		height: 12px;
+		margin: 18px auto 0;
+		border-radius: 50%;
+		background: var(--gradient-accent);
+		box-shadow:
+			0 0 0 4px rgba(9, 16, 32, 0.9),
+			0 0 16px rgba(var(--accent-rgb), 0.85);
+	}
+
+	.moment__card {
+		padding: var(--space-5);
+	}
+
+	.moment__head {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+		margin-bottom: var(--space-3);
+	}
+
+	.moment__mood {
+		padding: 3px 12px;
+		border-radius: var(--radius-full);
+		border: 1px solid rgba(var(--halo-rgb), 0.45);
+		background: rgba(var(--halo-rgb), 0.14);
+		font-size: var(--text-xs);
+		color: var(--accent-3);
+	}
+
+	.moment__tag {
+		font-size: var(--text-xs);
+		color: var(--text-dim);
+		align-self: center;
+	}
+
+	.moment__text {
+		margin: 0;
+		font-size: var(--text-sm);
+		line-height: 1.95;
+		color: var(--text-soft);
+		white-space: pre-line;
+	}
+
+	.moment__images {
+		display: grid;
+		gap: var(--space-2);
+		margin-top: var(--space-4);
+	}
+
+	.moment__images[data-count="1"] {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.moment__images[data-count="2"] {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.moment__images[data-count="3"],
+	.moment__images[data-count="4"] {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.moment__images img {
+		width: 100%;
+		aspect-ratio: 16 / 10;
+		object-fit: cover;
+		border-radius: var(--radius-sm);
+		border: 1px solid var(--border);
+		transition: transform var(--dur) var(--ease-spring);
+	}
+
+	.moment__images img:hover {
+		transform: scale(1.02);
+	}
+
+	@media (max-width: 768px) {
+		.moments__rail {
+			/* 光点列 28px 的中点 14px − 竖线宽度的一半 */
+			left: 13px;
+		}
+
+		.moment {
+			grid-template-columns: 28px minmax(0, 1fr);
+			column-gap: var(--space-3);
+			row-gap: var(--space-2);
+		}
+
+		.moment__time {
+			grid-column: 2;
+			grid-row: 1;
+			padding: 0;
+			text-align: left;
+		}
+
+		.moment__dot {
+			grid-column: 1;
+			grid-row: 1;
+			margin: 6px auto 0;
+		}
+
+		.moment__card {
+			grid-column: 2;
+			grid-row: 2;
+		}
+	}
+</style>

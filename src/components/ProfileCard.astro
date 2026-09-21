@@ -1,0 +1,161 @@
+---
+import { site } from "../data/site";
+
+const { posts, tags } = site.stats;
+---
+
+<section class="card profile" data-reveal>
+	<div class="profile__avatar">
+		<img src={site.avatar} alt={`${site.author} 的头像`} width="96" height="96" />
+	</div>
+	<h2 class="profile__name">{site.author}</h2>
+	<p class="profile__bio">{site.bio}</p>
+	<ul class="profile__links">
+		{
+			site.profileLinks.map((link) => (
+				<li>
+					<a href={link.url} target="_blank" rel="noreferrer noopener">
+						{link.name}
+					</a>
+				</li>
+			))
+		}
+	</ul>
+	<div class="profile__stats">
+		<div class="profile__stat">
+			<span class="profile__value">{posts}</span>
+			<span class="profile__label">文章</span>
+		</div>
+		<div class="profile__stat">
+			<span class="profile__value">{tags}</span>
+			<span class="profile__label">标签</span>
+		</div>
+		<div class="profile__stat">
+			<span class="profile__value">∞</span>
+			<span class="profile__label">猫毛</span>
+		</div>
+	</div>
+</section>
+
+<style>
+	.profile {
+		padding: var(--space-5);
+		text-align: center;
+	}
+
+	.profile__avatar {
+		position: relative;
+		width: 96px;
+		height: 96px;
+		margin: 0 auto var(--space-4);
+		border-radius: 50%;
+		padding: 3px;
+		z-index: 1;
+		background: conic-gradient(from 140deg, #128afa, #5fe1ff, #ffe08a, #128afa);
+		box-shadow: 0 16px 40px -20px rgba(var(--accent-rgb), 0.9);
+	}
+
+	.profile__avatar img {
+		width: 100%;
+		height: 100%;
+		border-radius: 50%;
+		object-fit: cover;
+		background: var(--bg-soft);
+	}
+
+	/* 头像外圈有一道缓慢转动的光弧 */
+	.profile__avatar::before {
+		content: "";
+		position: absolute;
+		inset: -5px;
+		border-radius: 50%;
+		background: conic-gradient(
+			from 0deg,
+			transparent 0deg 200deg,
+			rgba(95, 225, 255, 0.9) 285deg,
+			rgba(205, 234, 255, 0.95) 330deg,
+			transparent 360deg
+		);
+		mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
+		-webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
+		animation: halo-spin 5.5s linear infinite;
+		pointer-events: none;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.profile__avatar::before {
+			animation: none;
+		}
+	}
+
+	.profile__name {
+		margin: 0 0 var(--space-2);
+		font-size: var(--text-xl);
+		font-weight: 700;
+	}
+
+	.profile__bio {
+		margin: 0 0 var(--space-4);
+		font-size: var(--text-sm);
+		line-height: 1.7;
+		color: var(--text-muted);
+	}
+
+	.profile__links {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: var(--space-2);
+		margin: 0 0 var(--space-4);
+		padding: 0;
+		list-style: none;
+	}
+
+	.profile__links a {
+		display: inline-block;
+		padding: 4px 10px;
+		border-radius: var(--radius-full);
+		border: 1px solid var(--border);
+		background: rgba(255, 255, 255, 0.03);
+		font-size: var(--text-xs);
+		color: var(--text-muted);
+		transition:
+			color var(--dur) var(--ease-soft),
+			border-color var(--dur) var(--ease-soft);
+	}
+
+	.profile__links a:hover {
+		color: var(--text);
+		border-color: rgba(var(--accent-rgb), 0.5);
+	}
+
+	.profile__stats {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: var(--space-2);
+	}
+
+	.profile__stat {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		padding: var(--space-3) var(--space-2);
+		border-radius: var(--radius-sm);
+		background: rgba(255, 255, 255, 0.03);
+		border: 1px solid var(--border);
+	}
+
+	.profile__value {
+		font-size: var(--text-lg);
+		font-weight: 700;
+		background: var(--gradient-accent);
+		-webkit-background-clip: text;
+		background-clip: text;
+		color: transparent;
+	}
+
+	.profile__label {
+		font-size: var(--text-xs);
+		color: var(--text-dim);
+	}
+</style>

@@ -1,0 +1,151 @@
+---
+import "../styles/global.css";
+import { ClientRouter } from "astro:transitions";
+import SiteHeader from "../components/SiteHeader.astro";
+import SiteFooter from "../components/SiteFooter.astro";
+import Loader from "../components/Loader.astro";
+import PetalLayer from "../components/PetalLayer.astro";
+import { site } from "../data/site";
+import {
+	background,
+	buildWallpaperManifest,
+	paletteToCssVars,
+	pickWallpaper,
+} from "../data/background";
+
+interface Props {
+	title?: string;
+	description?: string;
+	/** 这一页马上要请求的第三方/子域接口地址，提前建连能省一个来回 */
+	preconnect?: string[];
+}
+
+const {
+	title = `${site.title} - ${site.subtitle}`,
+	description = site.description,
+	preconnect = [],
+} = Astro.props;
+
+const preconnectOrigins = [...new Set(preconnect.filter(Boolean))];
+
+// 智能主题：根据随机挑中的壁纸生成配色变量
+const wallpaper = background.mode === "image" ? pickWallpaper() : null;
+const manifest = background.mode === "image" ? buildWallpaperManifest() : null;
+const themeCss = [
+	/*
+	 * 用 `:root:root` 提高一层特异性：Astro 会把 tokens.css 之类的样式插到 <head> 末尾，
+	 * 同样的 `:root{}` 谁在后面谁生效，壁纸配色就会被默认色盖掉（之前就是这个毛病）。
+	 */
+	wallpaper?.palette ? `:root:root{${paletteToCssVars(wallpaper.palette)}}` : "",
+	wallpaper?.paletteMobile
+		? `@media (max-width:768px){:root:root{${paletteToCssVars(wallpaper.paletteMobile)}}}`
+		: "",
+]
+	.filter(Boolean)
+	.join("");
+---
+
+<!doctype html>
+<html lang="zh-CN">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>{title}</title>
+		<meta name="description" content={description} />
+		<meta name="generator" content={Astro.generator} />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+		{preconnectOrigins.map((origin) => <link rel="preconnect" href={origin} crossorigin />)}
+		{/* 构建时先烘焙一套配色，禁用 JS 时也能看；下面的脚本会按这次随机到的壁纸覆盖它 */}
+		<style id="wallpaper-theme" is:inline set:html={themeCss}></style>
+		{
+			manifest && (
+				<script type="application/json" id="wallpaper-manifest" set:html={JSON.stringify(manifest)} />
+			)
+		}
+		<script is:inline>
+			/*
+			 * 壁纸要在「首屏那张图开始下载之前」就定下来，否则要么每次刷新都一样，
+			 * 要么先下一张再换一张（白白多下一个几百 KB）。
+			 * 所以这里在 <head> 里立刻随机挑一张、提前声明下载、并把配色一起换掉。
+			 * 放在 head 的脚本在站内路由切换时不会再跑，同一次浏览里壁纸是稳定的。
+			 */
+			(() => {
+				if (window.__yukiWallpaper) return;
+
+				const manifestNode = document.getElementById("wallpaper-manifest");
+				if (!manifestNode || !manifestNode.textContent) return;
+
+				let manifest;
+				try {
+					manifest = JSON.parse(manifestNode.textContent);
+				} catch {
+					return;
+				}
+
+				const desktop = Array.isArray(manifest.desktop) ? manifest.desktop : [];
+				if (!desktop.length) return;
+
+				const index = Math.floor(Math.random() * desktop.length);
+				const mobile = Array.isArray(manifest.mobile) && manifest.mobile.length
+					? manifest.mobile[index % manifest.mobile.length]
+					: null;
+
+				const isMobile = window.matchMedia("(max-width: 768px)").matches;
+				const active = isMobile && mobile ? mobile : desktop[index];
+
+				window.__yukiWallpaper = { index, desktop: desktop[index], mobile, active };
+
+				// 先把这张图声明出来，浏览器会立刻开始下载（尺寸交给 srcset 按屏幕挑）
+				const preload = document.createElement("link");
+				preload.rel = "preload";
+				preload.as = "image";
+				preload.setAttribute("fetchpriority", "high");
+				if (active.srcSet) {
+					preload.setAttribute("imagesrcset", active.srcSet);
+					preload.setAttribute("imagesizes", "100vw");
+				} else {
+					preload.href = active.src;
+				}
+				document.head.appendChild(preload);
+
+				// 配色跟着这张图走，避免先按烘焙配色画一遍再跳色
+				const styleNode = document.getElementById("wallpaper-theme");
+				if (styleNode && active.vars) styleNode.textContent = `:root:root{${active.vars}}`;
+			})();
+		</script>
+		<ClientRouter />
+	</head>
+	<body>
+		<Loader />
+		<div class="page-backdrop" aria-hidden="true" transition:persist="backdrop"></div>
+		<PetalLayer transition:persist="petals" />
+		<div class="cursor-glow" aria-hidden="true" transition:persist="glow"></div>
+		<div class="scroll-progress" aria-hidden="true" transition:persist="progress"></div>
+		<SiteHeader transition:persist="site-header" />
+		<slot />
+		<SiteFooter />
+		<button class="to-top" type="button" data-to-top aria-label="回到顶部" transition:persist="to-top">
+			<svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+				<path
+					d="M12 19V6M6 12l6-6 6 6"
+					stroke="currentColor"
+					stroke-width="1.8"
+					stroke-linecap="round"
+					stroke-linejoin="round"></path>
+			</svg>
+		</button>
+		<script>
+			import { init } from "../scripts/effects";
+			import { initWallpaper, watchWallpaperBreakpoint } from "../scripts/wallpaper";
+
+			init();
+			initWallpaper();
+			watchWallpaperBreakpoint();
+			document.addEventListener("astro:page-load", () => {
+				init();
+				initWallpaper();
+			});
+		</script>
+	</body>
+</html>

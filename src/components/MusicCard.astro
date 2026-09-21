@@ -1,0 +1,321 @@
+---
+import { site } from "../data/site";
+---
+
+<section class="card music" data-reveal style="--reveal-delay:240ms">
+	<h2 class="section-title">{site.music.title}</h2>
+	<div class="music__player">
+		<img
+			class="music__cover"
+			src="/audio/cover.webp"
+			alt={`${site.music.track} 的封面`}
+			width="56"
+			height="56"
+		/>
+		<div class="music__meta">
+			<span class="music__track">{site.music.track}</span>
+			<span class="music__time" data-time>00:00 / 00:00</span>
+		</div>
+		<button
+			class="music__play"
+			type="button"
+			data-play
+			aria-label="播放背景音乐"
+			aria-pressed="false"
+		>
+			<svg class="music__icon music__icon--play" viewBox="0 0 24 24" aria-hidden="true">
+				<path d="M8 5.5v13l11-6.5-11-6.5Z" fill="currentColor"></path>
+			</svg>
+			<svg class="music__icon music__icon--pause" viewBox="0 0 24 24" aria-hidden="true">
+				<path d="M8 5h3v14H8zM13 5h3v14h-3z" fill="currentColor"></path>
+			</svg>
+		</button>
+	</div>
+	<span class="music__eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+	<div class="music__bar" data-bar title="点一下可以跳到想听的地方">
+		<div class="music__progress" data-progress></div>
+	</div>
+	<p class="music__hint" data-hint hidden></p>
+	<audio data-audio src={site.music.src} preload="none" loop></audio>
+</section>
+
+<style>
+	.music {
+		padding: var(--space-5);
+	}
+
+	.music__player {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
+	}
+
+	.music__cover {
+		width: 56px;
+		height: 56px;
+		border-radius: var(--radius-sm);
+		object-fit: cover;
+		border: 1px solid var(--border);
+	}
+
+	.music__meta {
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+		flex: 1;
+	}
+
+	.music__track {
+		font-size: var(--text-sm);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.music__time {
+		font-size: var(--text-xs);
+		color: var(--text-dim);
+		font-variant-numeric: tabular-nums;
+	}
+
+	.music__play {
+		display: grid;
+		place-items: center;
+		width: 42px;
+		height: 42px;
+		border-radius: 50%;
+		color: #12101f;
+		background: var(--gradient-accent);
+		box-shadow: 0 12px 28px -14px rgba(var(--accent-rgb), 0.9);
+		transition: transform var(--dur) var(--ease-out);
+	}
+
+	.music__play:hover {
+		transform: scale(1.06);
+	}
+
+	.music__icon {
+		width: 20px;
+		height: 20px;
+		grid-area: 1 / 1;
+	}
+
+	.music__icon--pause {
+		display: none;
+	}
+
+	.music.is-playing .music__icon--play {
+		display: none;
+	}
+
+	.music.is-playing .music__icon--pause {
+		display: block;
+	}
+
+	.music__bar {
+		position: relative;
+		height: 4px;
+		margin-top: var(--space-4);
+		border-radius: var(--radius-full);
+		background: rgba(255, 255, 255, 0.08);
+		overflow: hidden;
+		cursor: pointer;
+	}
+
+	/* 进度条本体只有 4px 高，往上下各扩一圈看不见的热区，点起来才不费劲 */
+	.music__bar::before {
+		content: "";
+		position: absolute;
+		inset: -9px 0;
+	}
+
+	/* 播放时跳动的均衡器 */
+	.music__eq {
+		display: flex;
+		align-items: flex-end;
+		gap: 3px;
+		height: 14px;
+		margin-top: var(--space-3);
+		opacity: 0;
+		transition: opacity var(--dur) var(--ease-soft);
+	}
+
+	.music.is-playing .music__eq {
+		opacity: 1;
+	}
+
+	.music__eq i {
+		width: 3px;
+		height: 14px;
+		border-radius: 2px;
+		background: var(--gradient-accent);
+		/* 用 scaleY 而不是动 height：不触发重排，动画更稳 */
+		transform: scaleY(0.28);
+		transform-origin: bottom;
+	}
+
+	.music.is-playing .music__eq i {
+		animation: eq-bounce 900ms var(--ease-soft) infinite;
+	}
+
+	.music.is-playing .music__eq i:nth-child(2) {
+		animation-delay: 140ms;
+	}
+
+	.music.is-playing .music__eq i:nth-child(3) {
+		animation-delay: 280ms;
+	}
+
+	.music.is-playing .music__eq i:nth-child(4) {
+		animation-delay: 420ms;
+	}
+
+	@keyframes eq-bounce {
+		0%,
+		100% {
+			transform: scaleY(0.28);
+		}
+		50% {
+			transform: scaleY(1);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.music.is-playing .music__eq i {
+			animation: none;
+			transform: scaleY(0.7);
+		}
+	}
+
+	.music__progress {
+		height: 100%;
+		width: 0;
+		border-radius: var(--radius-full);
+		background: var(--gradient-accent);
+		transition: width 200ms linear;
+	}
+
+	.music__hint {
+		margin: var(--space-2) 0 0;
+		font-size: var(--text-xs);
+		color: var(--text-dim);
+	}
+</style>
+
+<script>
+	const format = (seconds: number) => {
+		if (!Number.isFinite(seconds)) return "00:00";
+		const m = Math.floor(seconds / 60);
+		const s = Math.floor(seconds % 60);
+		return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+	};
+
+	const setupMusic = () => {
+		const card = document.querySelector<HTMLElement>(".music");
+		const button = document.querySelector<HTMLButtonElement>("[data-play]");
+		const audio = document.querySelector<HTMLAudioElement>("[data-audio]");
+		const progress = document.querySelector<HTMLElement>("[data-progress]");
+		const time = document.querySelector<HTMLElement>("[data-time]");
+		const bar = document.querySelector<HTMLElement>("[data-bar]");
+		const hint = document.querySelector<HTMLElement>("[data-hint]");
+		if (!card || !audio || audio.dataset.bound === "1") return;
+
+		audio.dataset.bound = "1";
+
+		const syncTime = () => {
+			if (!time) return;
+			time.textContent = `${format(audio.currentTime)} / ${format(audio.duration)}`;
+		};
+
+		const setHint = (text: string) => {
+			if (!hint) return;
+			hint.textContent = text;
+			hint.hidden = !text;
+		};
+
+		const setPlaying = (playing: boolean) => {
+			card.classList.toggle("is-playing", playing);
+			button?.setAttribute("aria-pressed", String(playing));
+			button?.setAttribute("aria-label", playing ? "暂停背景音乐" : "播放背景音乐");
+		};
+
+		/*
+		 * 首屏完全不碰音频（整首 936KB，会拖慢进入速度）。
+		 * 但 `preload="none"` 的副作用是时长一直显示 00:00、点播放要等缓冲，
+		 * 所以在用户「伸手要音乐」的瞬间（鼠标移上来 / 键盘聚焦 / 触屏按下）再去取。
+		 */
+		const warmUp = () => {
+			if (audio.dataset.warm === "1") return;
+			audio.dataset.warm = "1";
+			audio.preload = "metadata";
+			audio.load();
+		};
+
+		card.addEventListener("pointerenter", warmUp, { once: true });
+		card.addEventListener("focusin", warmUp, { once: true });
+		card.addEventListener("touchstart", warmUp, { once: true, passive: true });
+
+		button?.addEventListener("click", async () => {
+			if (!audio.paused) {
+				audio.pause();
+				return;
+			}
+
+			setHint(audio.readyState < 2 ? "加载中…" : "");
+			try {
+				await audio.play();
+				setHint("");
+			} catch (error) {
+				setHint("播放失败了，再点一下试试");
+				console.error("[music] 播放失败：", error);
+			}
+		});
+
+		audio.addEventListener("timeupdate", () => {
+			syncTime();
+			if (progress && audio.duration) {
+				progress.style.width = `${(audio.currentTime / audio.duration) * 100}%`;
+			}
+		});
+
+		audio.addEventListener("loadedmetadata", syncTime);
+		// 用媒体事件同步状态：系统的播放/暂停键、锁屏控制也能让按钮跟着变
+		audio.addEventListener("play", () => setPlaying(true));
+		audio.addEventListener("playing", () => {
+			setPlaying(true);
+			setHint("");
+		});
+		audio.addEventListener("pause", () => setPlaying(false));
+		audio.addEventListener("ended", () => setPlaying(false));
+		audio.addEventListener("error", () => {
+			setPlaying(false);
+			setHint("音频加载失败，刷新一下试试");
+		});
+
+		// 点进度条跳转
+		bar?.addEventListener("click", (event) => {
+			const duration = audio.duration;
+			if (!Number.isFinite(duration) || duration <= 0) return;
+			const rect = bar.getBoundingClientRect();
+			const ratio = Math.min(Math.max((event.clientX - rect.left) / rect.width, 0), 1);
+			const target = ratio * duration;
+			audio.currentTime = target;
+			syncTime();
+
+			/*
+			 * Cloudflare 目前对静态资源不返回 Accept-Ranges，
+			 * 音频会被当成「不可跳转」的整段资源，拖动后可能又从头开始。
+			 * 这种情况明确告诉访客一声，别让人以为点了没反应。
+			 */
+			window.setTimeout(() => {
+				if (Math.abs(audio.currentTime - target) > 1.5) {
+					setHint("这首曲子暂时不支持拖动进度，让它自己放吧～");
+					window.setTimeout(() => setHint(""), 5000);
+				}
+			}, 500);
+		});
+	};
+
+	setupMusic();
+	document.addEventListener("astro:page-load", setupMusic);
+</script>

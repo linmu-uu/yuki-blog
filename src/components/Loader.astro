@@ -1,0 +1,155 @@
+---
+import { site } from "../data/site";
+---
+
+<div class="loader" data-loader transition:persist="loader">
+	<div class="loader__halo" aria-hidden="true">
+		<span class="loader__ring"></span>
+		<span class="loader__arc"></span>
+	</div>
+	<p class="loader__title">{site.title}</p>
+	<p class="loader__hint">正在打开一切奇迹的起点…</p>
+</div>
+
+<style>
+	.loader {
+		position: fixed;
+		inset: 0;
+		z-index: 100;
+		display: grid;
+		align-content: center;
+		justify-items: center;
+		gap: var(--space-5);
+		background:
+			radial-gradient(60% 60% at 50% 38%, rgba(18, 138, 250, 0.22), transparent 70%),
+			linear-gradient(180deg, #071228, #04070f);
+		transition:
+			opacity 420ms var(--ease-glide),
+			visibility 420ms var(--ease-glide);
+		/* 兜底：就算 JS 完全没跑（禁用/报错），2.2 秒后也会自己淡出，不会一直挡着页面 */
+		animation: loader-failsafe 400ms var(--ease-soft) 2200ms forwards;
+	}
+
+	@keyframes loader-failsafe {
+		to {
+			opacity: 0;
+			visibility: hidden;
+		}
+	}
+
+	.loader.is-hidden {
+		opacity: 0;
+		visibility: hidden;
+		pointer-events: none;
+	}
+
+	.loader__halo {
+		position: relative;
+		width: 104px;
+		height: 104px;
+		filter: drop-shadow(0 0 26px rgba(var(--halo-rgb), 0.45));
+	}
+
+	.loader__ring {
+		position: absolute;
+		inset: 0;
+		border-radius: 50%;
+		border: 1px solid rgba(160, 210, 255, 0.28);
+	}
+
+	/* 旋转的光环弧：BA 加载时的那个味道 */
+	.loader__arc {
+		position: absolute;
+		inset: 0;
+		border-radius: 50%;
+		background: conic-gradient(
+			from 0deg,
+			transparent 0deg 190deg,
+			rgba(95, 225, 255, 0.35) 250deg,
+			#5fe1ff 310deg,
+			#cdeaff 345deg,
+			transparent 360deg
+		);
+		mask: radial-gradient(farthest-side, transparent calc(100% - 7px), #000 calc(100% - 6px));
+		-webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 7px), #000 calc(100% - 6px));
+		animation: loader-spin 1.05s linear infinite;
+	}
+
+	@keyframes loader-spin {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
+	.loader__title {
+		margin: 0;
+		font-family: var(--font-display);
+		font-size: var(--text-xl);
+		font-weight: 800;
+		letter-spacing: 0.14em;
+		background: var(--gradient-accent);
+		-webkit-background-clip: text;
+		background-clip: text;
+		color: transparent;
+		animation: loader-pulse 2.2s var(--ease-soft) infinite;
+	}
+
+	@keyframes loader-pulse {
+		50% {
+			opacity: 0.55;
+		}
+	}
+
+	.loader__hint {
+		margin: 0;
+		font-size: var(--text-xs);
+		letter-spacing: 0.18em;
+		color: var(--text-dim);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.loader__arc,
+		.loader__title {
+			animation: none;
+		}
+	}
+</style>
+
+<script is:inline>
+	(() => {
+		const loader = document.querySelector("[data-loader]");
+		if (!loader) return;
+
+		const seen = sessionStorage.getItem("yuki:loaded");
+		const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+		const hide = () => {
+			loader.classList.add("is-hidden");
+		};
+
+		// 同一次会话里只在第一次进入时显示，翻页就不会每次都挡一下
+		if (seen || reduced) {
+			hide();
+			return;
+		}
+
+		sessionStorage.setItem("yuki:loaded", "1");
+		const start = performance.now();
+
+		// 首屏的 HTML/CSS 一解析完就放行，不等图片也不等外部请求 ——
+		// 「进入速度」的体感基本就取决于这一步
+		const finish = () => {
+			const elapsed = performance.now() - start;
+			window.setTimeout(hide, Math.max(0, 380 - elapsed));
+		};
+
+		if (document.readyState === "loading") {
+			document.addEventListener("DOMContentLoaded", finish, { once: true });
+		} else {
+			finish();
+		}
+
+		// 兜底：网络再慢也不会一直卡着
+		window.setTimeout(hide, 2400);
+	})();
+</script>

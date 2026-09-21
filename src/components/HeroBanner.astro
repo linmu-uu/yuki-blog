@@ -1,0 +1,551 @@
+---
+import { site } from "../data/site";
+import { background, pickGradient, pickWallpaper } from "../data/background";
+
+const typedLines = ["一切奇迹的起点", "记录学习和生活的点滴", "欢迎来坐一会儿"];
+const chars = [...site.title];
+const gradient = pickGradient();
+const wallpaper = pickWallpaper();
+const desktopImage = wallpaper.src;
+const mobileImage = wallpaper.srcMobile;
+const useGradient = background.mode === "gradient";
+---
+
+<section
+	class:list={["hero", { "hero--gradient": useGradient }]}
+	style={useGradient ? `--g-base:${gradient.colors[0]};--g-main:${gradient.colors[1]};--g-soft:${gradient.colors[2]}` : undefined}
+>
+	<div class="hero__media">
+		{
+			useGradient ? (
+				<div class="hero__gradient" aria-hidden="true">
+					<span class="hero__blob hero__blob--1" />
+					<span class="hero__blob hero__blob--2" />
+					<span class="hero__blob hero__blob--3" />
+				</div>
+			) : (
+				<picture>
+					{/* 具体哪张图由 <head> 里的脚本随机决定并提前下载，这里只留占位 */}
+					<source media="(max-width: 768px)" data-wallpaper-source />
+					<img data-wallpaper-image alt="" fetchpriority="high" decoding="async" />
+				</picture>
+				<noscript>
+					<picture>
+						<source media="(max-width: 768px)" srcset={mobileImage} />
+						<img src={desktopImage} alt="" fetchpriority="high" decoding="async" />
+					</picture>
+				</noscript>
+			)
+		}
+	</div>
+	<div class="hero__scrim" aria-hidden="true"></div>
+	<div class="hero__streaks" aria-hidden="true"></div>
+	<div class="hero__halo" aria-hidden="true"></div>
+	<div class="hero__rings" aria-hidden="true">
+		<span class="hero__ring hero__ring--outer"></span>
+		<span class="hero__ring hero__ring--inner"></span>
+	</div>
+	<div class="hero__bar" aria-hidden="true"></div>
+	<span class="sparkle hero__sparkle" style="--sparkle-delay:0.2s" aria-hidden="true">
+		<svg viewBox="0 0 24 24"
+			><path
+				d="M12 0c.6 6.2 5.2 10.8 12 12-6.8 1.2-11.4 5.8-12 12-.6-6.2-5.2-10.8-12-12C6.8 10.8 11.4 6.2 12 0Z"
+			></path></svg
+		>
+	</span>
+	<span class="sparkle hero__sparkle" style="--sparkle-delay:1.3s" aria-hidden="true">
+		<svg viewBox="0 0 24 24"
+			><path
+				d="M12 0c.6 6.2 5.2 10.8 12 12-6.8 1.2-11.4 5.8-12 12-.6-6.2-5.2-10.8-12-12C6.8 10.8 11.4 6.2 12 0Z"
+			></path></svg
+		>
+	</span>
+	<span class="sparkle hero__sparkle" style="--sparkle-delay:2.4s" aria-hidden="true">
+		<svg viewBox="0 0 24 24"
+			><path
+				d="M12 0c.6 6.2 5.2 10.8 12 12-6.8 1.2-11.4 5.8-12 12-.6-6.2-5.2-10.8-12-12C6.8 10.8 11.4 6.2 12 0Z"
+			></path></svg
+		>
+	</span>
+
+	<div class="shell hero__inner">
+		<h1 class="hero__title">
+			{
+				chars.map((char, index) => (
+					<span class="hero__char" style={`--i:${index}`}>
+						{char === " " ? "\u00A0" : char}
+					</span>
+				))
+			}
+		</h1>
+		<div class="hero__row">
+			<p class="hero__typed">
+				<span data-typed={typedLines.join("|")}></span><span class="hero__caret"></span>
+			</p>
+			<a class="hero__cue" href="#main">
+				<span>向下探索</span>
+				<svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+					<path
+						d="M12 5v13M6 12l6 6 6-6"
+						stroke="currentColor"
+						stroke-width="1.7"
+						stroke-linecap="round"
+						stroke-linejoin="round"></path>
+				</svg>
+			</a>
+		</div>
+	</div>
+</section>
+
+<script is:inline>
+	/*
+	 * 把 <head> 里随机挑好的那张壁纸贴到英雄区。
+	 * 这么绕一圈是为了「首屏只下载一张图」+「每次刷新都不一样」两者兼得：
+	 * 图片地址在 head 阶段就确定了，浏览器不会先下错一张再换。
+	 */
+	(() => {
+		const image = document.querySelector("[data-wallpaper-image]");
+		const chosen = window.__yukiWallpaper;
+		if (!image || !chosen) return;
+
+		const source = document.querySelector("[data-wallpaper-source]");
+		if (source && chosen.mobile) source.srcset = chosen.mobile.src;
+
+		const isMobile = window.matchMedia("(max-width: 768px)").matches;
+		const active = isMobile && chosen.mobile ? chosen.mobile : chosen.desktop;
+		if (!active) return;
+
+		image.dataset.wallpaper = active.src;
+		if (active.srcSet) {
+			image.srcset = active.srcSet;
+			image.sizes = "100vw";
+		}
+		image.src = active.src;
+	})();
+</script>
+
+<style>
+	.hero {
+		position: relative;
+		display: grid;
+		align-items: end;
+		min-height: min(82vh, 780px);
+		margin-top: calc(var(--header-height) * -1);
+		padding-top: var(--header-height);
+		overflow: hidden;
+	}
+
+	.hero__media {
+		position: absolute;
+		inset: 0;
+	}
+
+	/* ---- 渐变模式：BA 风格的大色块光晕 ---- */
+	.hero__gradient {
+		position: absolute;
+		inset: 0;
+		overflow: hidden;
+		background: linear-gradient(175deg, var(--g-base, #081428) 0%, #05090f 92%);
+	}
+
+	.hero__blob {
+		position: absolute;
+		border-radius: 50%;
+		filter: blur(72px);
+		opacity: 0.92;
+		will-change: transform;
+	}
+
+	.hero__blob--1 {
+		top: -20%;
+		left: -8%;
+		width: 62vw;
+		height: 62vw;
+		min-width: 520px;
+		min-height: 520px;
+		background: radial-gradient(circle, var(--g-main, #128afa), transparent 66%);
+		animation: blob-drift 24s var(--ease-soft) infinite;
+	}
+
+	.hero__blob--2 {
+		top: 6%;
+		right: -8%;
+		width: 48vw;
+		height: 48vw;
+		min-width: 380px;
+		min-height: 380px;
+		background: radial-gradient(circle, var(--g-soft, #5fe1ff), transparent 68%);
+		animation: blob-drift 30s var(--ease-soft) infinite reverse;
+	}
+
+	.hero__blob--3 {
+		bottom: -24%;
+		left: 24%;
+		width: 44vw;
+		height: 44vw;
+		min-width: 320px;
+		min-height: 320px;
+		background: radial-gradient(circle, var(--g-main, #128afa), transparent 70%);
+		opacity: 0.45;
+		animation: blob-drift 34s var(--ease-soft) infinite;
+	}
+
+	@keyframes blob-drift {
+		50% {
+			transform: translate3d(6%, 5%, 0) scale(1.1);
+		}
+	}
+
+	/* 渐变模式下不要压那么暗，让颜色透出来 */
+	.hero--gradient .hero__scrim {
+		background: linear-gradient(
+			180deg,
+			rgba(5, 9, 20, 0.28) 0%,
+			transparent 42%,
+			rgba(5, 9, 15, 0.72) 84%,
+			var(--bg) 100%
+		);
+	}
+
+	.hero__media img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		object-position: 0% 22%;
+		/* 入场稍快一点：首屏大图的动画时间直接算进「进入速度」的体感里 */
+		animation: hero-in 1.05s var(--ease-out) both;
+	}
+
+	.hero__scrim {
+		position: absolute;
+		inset: 0;
+		background:
+			linear-gradient(
+				180deg,
+				rgba(7, 14, 32, 0.62) 0%,
+				rgba(7, 14, 32, 0.16) 30%,
+				rgba(7, 14, 32, 0.88) 76%,
+				var(--bg) 100%
+			),
+			radial-gradient(78% 62% at 14% 86%, rgba(5, 10, 22, 0.92), rgba(7, 14, 32, 0.55) 46%, transparent 74%);
+	}
+
+	/* BA 风格斜向光带 */
+	.hero__streaks {
+		position: absolute;
+		inset: -10% -5%;
+		pointer-events: none;
+		background: repeating-linear-gradient(
+			112deg,
+			rgba(120, 200, 255, 0.11) 0px,
+			rgba(120, 200, 255, 0.11) 2px,
+			transparent 2px,
+			transparent 68px
+		);
+		mask-image: radial-gradient(120% 90% at 30% 40%, #000 10%, transparent 72%);
+		mix-blend-mode: screen;
+		animation: streak-drift 18s linear infinite;
+	}
+
+	@keyframes streak-drift {
+		to {
+			background-position: -280px 0;
+		}
+	}
+
+	/* 标题后方的光环 */
+	.hero__halo {
+		position: absolute;
+		left: 6%;
+		bottom: 16%;
+		width: min(46vw, 520px);
+		height: min(46vw, 520px);
+		border-radius: 50%;
+		pointer-events: none;
+		background: radial-gradient(
+			circle,
+			rgba(var(--halo-rgb), 0.22) 0%,
+			rgba(var(--accent-rgb), 0.16) 42%,
+			transparent 68%
+		);
+		filter: blur(14px);
+		animation: halo-breathe 6s var(--ease-soft) infinite;
+	}
+
+	/* 右侧的装饰圆环：BA 界面里常见的那种几何环 */
+	.hero__rings {
+		position: absolute;
+		top: 50%;
+		right: 6%;
+		width: min(38vw, 460px);
+		height: min(38vw, 460px);
+		transform: translateY(-56%);
+		pointer-events: none;
+	}
+
+	.hero__ring {
+		position: absolute;
+		inset: 0;
+		border-radius: 50%;
+		border: 1px solid rgba(160, 210, 255, 0.28);
+	}
+
+	.hero__ring--outer {
+		border-style: dashed;
+		border-color: rgba(160, 210, 255, 0.34);
+		animation: ring-spin 46s linear infinite;
+	}
+
+	.hero__ring--inner {
+		inset: 17%;
+		border-color: rgba(var(--halo-rgb), 0.28);
+		box-shadow: inset 0 0 60px rgba(var(--accent-rgb), 0.22);
+		animation: ring-spin 32s linear infinite reverse;
+	}
+
+	@keyframes ring-spin {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
+	/* 底部的渐隐光带 */
+	.hero__bar {
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		height: 2px;
+		background: linear-gradient(90deg, transparent, rgba(var(--accent-rgb), 0.9) 45%, rgba(95, 225, 255, 0.9) 70%, transparent);
+		opacity: 0.65;
+	}
+
+	@keyframes halo-breathe {
+		0%,
+		100% {
+			opacity: 0.8;
+			transform: scale(1);
+		}
+		50% {
+			opacity: 1;
+			transform: scale(1.05);
+		}
+	}
+
+	.hero__sparkle {
+		z-index: 2;
+	}
+
+	.hero__sparkle:nth-of-type(1) {
+		top: 26%;
+		left: 12%;
+		width: 18px;
+		height: 18px;
+	}
+
+	.hero__sparkle:nth-of-type(2) {
+		top: 18%;
+		right: 22%;
+		width: 12px;
+		height: 12px;
+		color: rgba(var(--halo-rgb), 0.95);
+	}
+
+	.hero__sparkle:nth-of-type(3) {
+		bottom: 34%;
+		right: 9%;
+		width: 16px;
+		height: 16px;
+	}
+
+	.hero__inner {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-3);
+		padding-block: var(--space-8) 124px;
+	}
+
+	.hero__title {
+		margin: 0;
+		font-family: var(--font-display);
+		font-size: clamp(2.2rem, 4.6vw, 3.7rem);
+		font-weight: 800;
+		line-height: 1.12;
+		letter-spacing: 0.01em;
+		max-width: 18ch;
+		text-shadow: 0 22px 60px rgba(0, 0, 0, 0.55);
+		filter: drop-shadow(0 12px 34px rgba(var(--accent-rgb), 0.22));
+	}
+
+	.hero__title {
+		filter: drop-shadow(0 12px 34px rgba(var(--accent-rgb), 0.35));
+	}
+
+	.hero__char {
+		display: inline-block;
+		background: var(--gradient-accent);
+		background-size: 200% 100%;
+		-webkit-background-clip: text;
+		background-clip: text;
+		color: transparent;
+		opacity: 0;
+		transform: translateY(0.42em) rotate(4deg);
+		animation:
+			char-in 1s var(--ease-out) forwards,
+			/* 入场之后再让渐变慢慢流动，标题一直是「活的」 */
+			char-shine 8s ease-in-out infinite;
+		animation-delay:
+			calc(180ms + var(--i) * 70ms),
+			1600ms;
+	}
+
+	@keyframes char-shine {
+		0%,
+		100% {
+			background-position: 0% 50%;
+		}
+		50% {
+			background-position: 100% 50%;
+		}
+	}
+
+	.hero__typed {
+		display: flex;
+		align-items: center;
+		gap: 2px;
+		min-height: 1.9em;
+		margin: 0;
+		font-size: var(--text-base);
+		color: var(--text-soft);
+		letter-spacing: 0.08em;
+		animation: fade-up 1s var(--ease-out) 720ms both;
+	}
+
+	.hero__row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-5);
+		flex-wrap: wrap;
+	}
+
+	.hero__caret {
+		width: 2px;
+		height: 1.1em;
+		background: var(--accent);
+		box-shadow: 0 0 12px var(--accent);
+		animation: caret 1.05s steps(2, start) infinite;
+	}
+
+	.hero__cue {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
+		padding: 8px 16px;
+		border-radius: var(--radius-full);
+		border: 1px solid var(--border);
+		background: rgba(255, 255, 255, 0.05);
+		backdrop-filter: blur(10px);
+		font-size: var(--text-sm);
+		color: var(--text-soft);
+		transition:
+			transform var(--dur) var(--ease-out),
+			border-color var(--dur) var(--ease-soft),
+			color var(--dur) var(--ease-soft);
+		animation: fade-up 1s var(--ease-out) 900ms both;
+	}
+
+	.hero__cue:hover {
+		transform: translateY(3px);
+		border-color: var(--border-strong);
+		color: var(--text);
+	}
+
+	.hero__cue svg {
+		width: 16px;
+		height: 16px;
+	}
+
+	@keyframes hero-in {
+		from {
+			opacity: 0;
+			transform: scale(1.09);
+		}
+		to {
+			opacity: 1;
+			transform: scale(1.02);
+		}
+	}
+
+	@keyframes char-in {
+		to {
+			opacity: 1;
+			transform: none;
+		}
+	}
+
+	@keyframes fade-up {
+		from {
+			opacity: 0;
+			transform: translateY(16px);
+		}
+		to {
+			opacity: 1;
+			transform: none;
+		}
+	}
+
+	@keyframes caret {
+		50% {
+			opacity: 0;
+		}
+	}
+
+	@media (max-width: 768px) {
+		.hero {
+			min-height: 70vh;
+		}
+
+		.hero__title {
+			font-size: clamp(2.2rem, 10vw, 3rem);
+		}
+
+		.hero__inner {
+			padding-block: var(--space-7) 116px;
+		}
+
+		.hero__row {
+			align-items: flex-start;
+		}
+
+		.hero__rings {
+			top: 34%;
+			right: -18%;
+			width: 76vw;
+			height: 76vw;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.hero__blob {
+			animation: none;
+		}
+
+		.hero__ring {
+			animation: none;
+		}
+
+		.hero__media img,
+		.hero__char,
+		.hero__typed,
+		.hero__cue {
+			animation: none;
+			opacity: 1;
+		}
+
+		.hero__media img {
+			transform: none;
+		}
+	}
+</style>

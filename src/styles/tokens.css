@@ -1,0 +1,104 @@
+/* ==========================================================================
+   YUKI 主题设计令牌
+   视觉方向：暗色霓虹 + 樱花质感（Yuimi Lab 的能量感 × Firefly 的布局秩序）
+   ========================================================================== */
+
+:root {
+	/* ---------- 底色与表面（蔚蓝档案：深海军蓝底） ---------- */
+	--bg: #070e20;
+	--bg-deep: #04070f;
+	--bg-soft: #0b1730;
+	--surface: rgba(255, 255, 255, 0.045);
+	--surface-hover: rgba(255, 255, 255, 0.075);
+	--surface-solid: #0d1a33;
+	--border: rgba(140, 190, 255, 0.16);
+	--border-strong: rgba(160, 205, 255, 0.34);
+
+	/* ---------- 文字 ---------- */
+	--text: #eef5ff;
+	--text-soft: #c3d7f2;
+	--text-muted: #90a8ca;
+	--text-dim: #66799b;
+
+	/* ---------- 强调色（BA 蓝 + 光环金） ---------- */
+	--accent: #3b9bff;
+	--accent-rgb: 59, 155, 255;
+	--accent-soft: #9ecfff;
+	--accent-2: #5fe1ff;
+	--accent-3: #ffd54f;
+	--halo: #ffe08a;
+	--halo-rgb: 255, 224, 138;
+	--gradient-accent: linear-gradient(120deg, #128afa 0%, #4fc3f7 58%, #cdeaff 100%);
+	--gradient-soft: linear-gradient(120deg, rgba(18, 138, 250, 0.2), rgba(95, 225, 255, 0.14));
+
+	/* 多彩渐变组：让页面不要只有一种蓝 */
+	--gradient-a: linear-gradient(120deg, #128afa, #5fe1ff);
+	--gradient-b: linear-gradient(120deg, #5fe1ff, #cdeaff 55%, #ffe08a);
+	--gradient-c: linear-gradient(120deg, #6d5efc, #128afa);
+	--gradient-spectrum: linear-gradient(
+		120deg,
+		#128afa,
+		#5fe1ff 28%,
+		#cdeaff 48%,
+		#ffe08a 72%,
+		#b98bff 100%
+	);
+
+	/* ---------- 圆角 ---------- */
+	--radius-xs: 8px;
+	--radius-sm: 12px;
+	--radius: 18px;
+	--radius-lg: 26px;
+	--radius-full: 999px;
+
+	/* ---------- 阴影与光晕 ---------- */
+	/* 光影层次：贴近 OriginOS 那种"多层柔和投影 + 顶部高光"的质感 */
+	--shadow-card: 0 1px 2px rgba(3, 8, 20, 0.5), 0 12px 34px -18px rgba(3, 8, 20, 0.75);
+	--shadow-lift: 0 2px 6px rgba(3, 8, 20, 0.45), 0 30px 66px -26px rgba(3, 8, 20, 0.9);
+	--inner-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+	--glow-accent: 0 0 0 1px rgba(59, 155, 255, 0.4), 0 18px 50px -22px rgba(59, 155, 255, 0.55);
+	--glow-cyan: 0 0 0 1px rgba(95, 225, 255, 0.34), 0 18px 50px -22px rgba(95, 225, 255, 0.45);
+	--glow-halo: 0 0 22px rgba(255, 224, 138, 0.55), 0 0 60px rgba(255, 224, 138, 0.28);
+
+	/* ---------- 间距节奏 ---------- */
+	--space-1: 4px;
+	--space-2: 8px;
+	--space-3: 12px;
+	--space-4: 16px;
+	--space-5: 24px;
+	--space-6: 32px;
+	--space-7: 48px;
+	--space-8: 72px;
+
+	/* ---------- 排版 ---------- */
+	--font-sans: "MiSans", "HarmonyOS Sans SC", "PingFang SC", "Noto Sans SC",
+		"Microsoft YaHei", system-ui, -apple-system, "Segoe UI", sans-serif;
+	--font-display: "MiSans", "HarmonyOS Sans SC", "PingFang SC", "Noto Sans SC",
+		"Microsoft YaHei", system-ui, sans-serif;
+	--font-mono: "JetBrains Mono", "Cascadia Code", Consolas, "Courier New", monospace;
+
+	--text-xs: 0.75rem;
+	--text-sm: 0.875rem;
+	--text-base: 1rem;
+	--text-lg: 1.125rem;
+	--text-xl: 1.375rem;
+	--text-2xl: 1.75rem;
+	--text-3xl: 2.4rem;
+	--text-hero: clamp(2.6rem, 6vw, 5rem);
+
+	/* ---------- 布局 ---------- */
+	--page-width: 1400px;
+	--sidebar-width: 320px;
+	--content-gap: 24px;
+	--header-height: 68px;
+
+	/* ---------- 动效 ---------- */
+	/* 动效曲线：偏向系统级 UI 的顺滑手感（快速起步、柔和收尾） */
+	--ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+	--ease-soft: cubic-bezier(0.4, 0, 0.2, 1);
+	--ease-spring: cubic-bezier(0.34, 1.56, 0.44, 1);
+	--ease-glide: cubic-bezier(0.16, 1, 0.3, 1);
+	--dur-fast: 140ms;
+	--dur: 260ms;
+	--dur-slow: 520ms;
+}

@@ -1,0 +1,10 @@
+# 统一用 LF，避免 Windows 上 CRLF 来回折腾
+* text=auto eol=lf
+
+# 二进制资源别做任何文本处理
+*.avif binary
+*.webp binary
+*.png binary
+*.jpg binary
+*.mp3 binary
+*.woff2 binary

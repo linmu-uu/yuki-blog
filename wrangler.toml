@@ -1,0 +1,12 @@
+# 站点是纯静态的，构建产物直接交给 Cloudflare Workers 静态资源托管。
+#
+# 注意：name 沿用老站（Firefly）的 Worker 名字 —— yuki666.online 这个自定义域名
+# 还挂在它上面，换名字的话等于新建一个 Worker，需要去 Cloudflare 后台把域名搬过去。
+name = "firefly"
+compatibility_date = "2026-09-20"
+
+[assets]
+directory = "./dist"
+
+[vars]
+NODE_VERSION = "22"

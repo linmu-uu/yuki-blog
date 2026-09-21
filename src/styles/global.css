@@ -1,0 +1,493 @@
+@import "./tokens.css";
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+html {
+	scroll-behavior: smooth;
+	-webkit-text-size-adjust: 100%;
+}
+
+body {
+	margin: 0;
+	min-height: 100vh;
+	background: var(--bg);
+	color: var(--text);
+	font-family: var(--font-sans);
+	font-size: var(--text-base);
+	line-height: 1.75;
+	-webkit-font-smoothing: antialiased;
+	overflow-x: hidden;
+}
+
+a {
+	color: inherit;
+	text-decoration: none;
+}
+
+img {
+	display: block;
+	max-width: 100%;
+}
+
+button {
+	font: inherit;
+	color: inherit;
+	cursor: pointer;
+	border: none;
+	background: none;
+}
+
+::selection {
+	background: rgba(var(--accent-rgb), 0.35);
+	color: var(--text);
+}
+
+/* ---------- 页面背景：海军蓝柔光 + 斜向光带 + 暗角 ---------- */
+.page-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: -2;
+	pointer-events: none;
+	background:
+		radial-gradient(58rem 40rem at 8% -10%, rgba(18, 138, 250, 0.32), transparent 62%),
+		radial-gradient(46rem 34rem at 96% 6%, rgba(95, 225, 255, 0.2), transparent 60%),
+		radial-gradient(40rem 30rem at 78% 42%, rgba(185, 139, 255, 0.16), transparent 62%),
+		radial-gradient(34rem 26rem at 22% 72%, rgba(255, 224, 138, 0.1), transparent 64%),
+		radial-gradient(64rem 44rem at 50% 108%, rgba(37, 99, 235, 0.24), transparent 64%),
+		linear-gradient(180deg, var(--bg) 0%, var(--bg-deep) 100%);
+	/* 极光缓慢漂移，让背景一直有呼吸感 */
+	animation: backdrop-drift 48s var(--ease-soft) infinite alternate;
+}
+
+@keyframes backdrop-drift {
+	from {
+		transform: scale(1) translate3d(0, 0, 0);
+	}
+	to {
+		transform: scale(1.07) translate3d(-1.6%, -1.2%, 0);
+	}
+}
+
+.page-backdrop::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background-image:
+		repeating-linear-gradient(
+			115deg,
+			rgba(120, 190, 255, 0.05) 0px,
+			rgba(120, 190, 255, 0.05) 1px,
+			transparent 1px,
+			transparent 26px
+		),
+		radial-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+	background-size: auto, 3px 3px;
+	opacity: 0.5;
+	mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.9), transparent 85%);
+}
+
+/* ---------- 鼠标柔光 ---------- */
+.cursor-glow {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 520px;
+	height: 520px;
+	z-index: -1;
+	opacity: 0;
+	pointer-events: none;
+	border-radius: 50%;
+	background: radial-gradient(circle, rgba(var(--accent-rgb), 0.16), rgba(95, 225, 255, 0.08) 45%, transparent 68%);
+	filter: blur(10px);
+	transition: opacity 420ms var(--ease-soft);
+}
+
+/* 壁纸轮换时的淡入层：盖在原图上方，淡入完成后接管 */
+.hero__media-layer {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	object-position: 0% 22%;
+	opacity: 0;
+	transition: opacity 1100ms var(--ease-glide);
+	pointer-events: none;
+}
+
+/* ---------- 通用容器 ---------- */
+.shell {
+	width: 100%;
+	max-width: var(--page-width);
+	margin-inline: auto;
+	padding-inline: var(--space-5);
+}
+
+.page-body {
+	padding-block: var(--space-7) var(--space-8);
+}
+
+.page-body--narrow {
+	max-width: 980px;
+}
+
+.card {
+	position: relative;
+	background-image:
+		radial-gradient(
+			360px circle at var(--mx, 50%) var(--my, 0%),
+			rgba(150, 210, 255, 0.12),
+			transparent 62%
+		),
+		linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.026));
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+	backdrop-filter: blur(14px);
+	box-shadow: var(--shadow-card), var(--inner-highlight);
+	transition:
+		border-color var(--dur) var(--ease-soft),
+		transform var(--dur) var(--ease-spring),
+		box-shadow var(--dur) var(--ease-soft);
+}
+
+.card:hover {
+	box-shadow: var(--shadow-lift), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* 蔚蓝档案式的切角装饰：右上角斜切的光边 + 淡蓝色三角面 */
+.card::before {
+	content: "";
+	position: absolute;
+	top: -1px;
+	right: -1px;
+	width: 36px;
+	height: 36px;
+	pointer-events: none;
+	background: linear-gradient(
+		225deg,
+		rgba(var(--accent-rgb), 0.55) 0%,
+		rgba(var(--accent-rgb), 0.22) 46%,
+		rgba(var(--accent-rgb), 0) 47%
+	);
+	border-top: 1.5px solid rgba(var(--accent-rgb), 0.8);
+	border-right: 1.5px solid rgba(var(--accent-rgb), 0.8);
+	border-top-right-radius: var(--radius);
+	opacity: 0.85;
+	transition:
+		opacity var(--dur) var(--ease-soft),
+		width var(--dur) var(--ease-spring),
+		height var(--dur) var(--ease-spring);
+}
+
+.card:hover::before {
+	opacity: 1;
+	width: 44px;
+	height: 44px;
+}
+
+/* 悬停时划过卡片的一道斜向高光 */
+.card::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	border-radius: inherit;
+	pointer-events: none;
+	background: linear-gradient(
+		115deg,
+		transparent 38%,
+		rgba(180, 220, 255, 0.16) 50%,
+		transparent 62%
+	);
+	background-size: 260% 100%;
+	background-position: 130% 0;
+	opacity: 0;
+	transition: background-position 900ms var(--ease-glide), opacity var(--dur) var(--ease-soft);
+}
+
+.card:hover::after {
+	opacity: 1;
+	background-position: -30% 0;
+}
+
+.section-title {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+	margin: 0 0 var(--space-5);
+	font-size: var(--text-lg);
+	font-weight: 700;
+	letter-spacing: 0.02em;
+}
+
+.section-title::before {
+	content: "";
+	width: 4px;
+	height: 1.05em;
+	border-radius: var(--radius-full);
+	background: var(--gradient-spectrum);
+	background-size: 260% 100%;
+	box-shadow: 0 0 18px rgba(var(--accent-rgb), 0.6);
+	animation: title-sheen 7s linear infinite;
+}
+
+@keyframes title-sheen {
+	to {
+		background-position: 260% 0;
+	}
+}
+
+/* ---------- 渐变细节：标题下划线、按钮 ---------- */
+.section-title::after {
+	content: "";
+	flex: 1;
+	height: 1px;
+	background: linear-gradient(
+		90deg,
+		rgba(var(--accent-rgb), 0.4),
+		rgba(95, 225, 255, 0.24) 34%,
+		rgba(var(--halo-rgb), 0.16) 58%,
+		transparent 78%
+	);
+}
+
+.text-gradient-alt {
+	background: var(--gradient-b);
+	-webkit-background-clip: text;
+	background-clip: text;
+	color: transparent;
+}
+
+.btn-gradient {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-2);
+	padding: 10px 22px;
+	border-radius: var(--radius-full);
+	font-size: var(--text-sm);
+	font-weight: 600;
+	color: #06101f;
+	background: var(--gradient-accent);
+	box-shadow: 0 14px 34px -16px rgba(var(--accent-rgb), 0.9);
+	transition:
+		transform var(--dur) var(--ease-spring),
+		box-shadow var(--dur) var(--ease-soft);
+}
+
+.btn-gradient:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 20px 42px -16px rgba(var(--accent-rgb), 1);
+}
+
+/* ---------- 回到顶部按钮 ---------- */
+.to-top {
+	position: fixed;
+	right: 26px;
+	bottom: 26px;
+	z-index: 50;
+	display: grid;
+	place-items: center;
+	width: 46px;
+	height: 46px;
+	border-radius: 50%;
+	color: var(--accent-soft);
+	background: rgba(9, 16, 32, 0.78);
+	border: 1px solid var(--border-strong);
+	backdrop-filter: blur(12px);
+	box-shadow: var(--shadow-lift);
+	opacity: 0;
+	transform: translateY(14px) scale(0.9);
+	pointer-events: none;
+	transition:
+		opacity var(--dur) var(--ease-soft),
+		transform var(--dur) var(--ease-spring),
+		border-color var(--dur) var(--ease-soft);
+}
+
+.to-top.is-visible {
+	opacity: 1;
+	transform: none;
+	pointer-events: auto;
+}
+
+.to-top::before {
+	content: "";
+	position: absolute;
+	inset: -2px;
+	border-radius: 50%;
+	background: var(--gradient-accent);
+	opacity: 0;
+	transition: opacity var(--dur) var(--ease-soft);
+	z-index: -1;
+}
+
+.to-top:hover {
+	border-color: transparent;
+	transform: translateY(-2px);
+}
+
+.to-top:hover::before {
+	opacity: 0.9;
+}
+
+.to-top svg {
+	width: 20px;
+	height: 20px;
+}
+
+@media (max-width: 768px) {
+	.to-top {
+		right: 16px;
+		bottom: 16px;
+		width: 42px;
+		height: 42px;
+	}
+}
+
+.text-gradient {
+	background: var(--gradient-accent);
+	-webkit-background-clip: text;
+	background-clip: text;
+	color: transparent;
+}
+
+/* ---------- 顶部滚动进度条 ---------- */
+.scroll-progress {
+	position: fixed;
+	top: 0;
+	left: 0;
+	z-index: 60;
+	width: 100%;
+	height: 2px;
+	transform-origin: 0 50%;
+	transform: scaleX(var(--progress, 0));
+	background: linear-gradient(90deg, #128afa, #5fe1ff 60%, #ffe08a);
+	box-shadow: 0 0 12px rgba(95, 225, 255, 0.7);
+	pointer-events: none;
+}
+
+/* ---------- 四芒星光点（BA 里的那种小闪光） ---------- */
+.sparkle {
+	position: absolute;
+	width: 14px;
+	height: 14px;
+	pointer-events: none;
+	color: rgba(205, 234, 255, 0.9);
+	animation: sparkle-twinkle 3.4s var(--ease-soft) infinite;
+	animation-delay: var(--sparkle-delay, 0s);
+	filter: drop-shadow(0 0 8px rgba(120, 200, 255, 0.8));
+}
+
+.sparkle svg {
+	width: 100%;
+	height: 100%;
+	fill: currentColor;
+}
+
+@keyframes sparkle-twinkle {
+	0%,
+	100% {
+		opacity: 0.25;
+		transform: scale(0.7) rotate(0deg);
+	}
+	45% {
+		opacity: 1;
+		transform: scale(1.15) rotate(45deg);
+	}
+}
+
+/* ---------- 光环（头像上方的那圈光） ---------- */
+@keyframes halo-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+/* ==========================================================================
+   页面切换动画（View Transitions）
+   旧页面轻微上移淡出，新页面从下方柔和滑入 —— 追求"顺滑、不晕"的手感
+   ========================================================================== */
+
+::view-transition-old(root) {
+	animation: page-leave 200ms var(--ease-glide) both;
+}
+
+::view-transition-new(root) {
+	animation: page-enter 360ms var(--ease-glide) both;
+}
+
+@keyframes page-leave {
+	to {
+		opacity: 0;
+		transform: translateY(-8px) scale(0.996);
+	}
+}
+
+@keyframes page-enter {
+	from {
+		opacity: 0;
+		transform: translateY(12px) scale(0.994);
+	}
+}
+
+/* 顶部栏与背景层固定住，不跟着页面一起动，避免闪烁 */
+::view-transition-old(site-header),
+::view-transition-new(site-header) {
+	animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	::view-transition-old(root),
+	::view-transition-new(root) {
+		animation: none;
+	}
+}
+
+/* ---------- 滚动出现动画 ---------- */
+[data-reveal] {
+	opacity: 0;
+	transform: translateY(26px);
+	transition:
+		opacity var(--dur-slow) var(--ease-out),
+		transform var(--dur-slow) var(--ease-out);
+	transition-delay: var(--reveal-delay, 0ms);
+}
+
+[data-reveal].is-visible {
+	opacity: 1;
+	transform: none;
+}
+
+/* ---------- 懒加载图片淡入（由 effects.ts 加/去掉 is-loading） ---------- */
+img.is-loading {
+	opacity: 0;
+	transition: opacity 480ms var(--ease-out);
+}
+
+/* ---------- 无障碍：尊重系统的减少动态效果设置 ---------- */
+@media (prefers-reduced-motion: reduce) {
+	html {
+		scroll-behavior: auto;
+	}
+
+	[data-reveal] {
+		opacity: 1;
+		transform: none;
+		transition: none;
+	}
+
+	.petal-canvas {
+		display: none;
+	}
+
+	.sparkle {
+		animation: none;
+	}
+
+	.scroll-progress {
+		transition: none;
+	}
+}

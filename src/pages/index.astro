@@ -1,0 +1,101 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import HeroBanner from "../components/HeroBanner.astro";
+import ProfileCard from "../components/ProfileCard.astro";
+import AnnouncementCard from "../components/AnnouncementCard.astro";
+import MusicCard from "../components/MusicCard.astro";
+import TagCloud from "../components/TagCloud.astro";
+import PostCard from "../components/PostCard.astro";
+
+const allPosts = await getCollection("posts", ({ data }) => !data.draft);
+const posts = allPosts.sort((a, b) => b.data.published.valueOf() - a.data.published.valueOf());
+
+const tagCounts = new Map<string, number>();
+for (const post of posts) {
+	for (const tag of post.data.tags) {
+		tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+	}
+}
+const tags = [...tagCounts.entries()]
+	.map(([name, count]) => ({ name, count }))
+	.sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+
+const postHref = (id: string) => `/posts/${id.replace(/\.(md|mdx)$/, "")}/`;
+---
+
+<BaseLayout>
+	<HeroBanner />
+
+	<main class="shell layout" id="main">
+		<aside class="layout__side">
+			<ProfileCard />
+			<AnnouncementCard />
+			<MusicCard />
+			<TagCloud tags={tags} />
+		</aside>
+
+		<div class="layout__content">
+			<h2 class="section-title" data-reveal>最新文章</h2>
+			<div class="post-list">
+				{
+					posts.map((post, index) => (
+						<PostCard
+							title={post.data.title}
+							description={post.data.description}
+							href={postHref(post.id)}
+							published={post.data.published}
+							category={post.data.category}
+							tags={post.data.tags}
+							delay={index * 90}
+							variant={index}
+							slug={post.id.replace(/\.(md|mdx)$/, "")}
+						/>
+					))
+				}
+			</div>
+		</div>
+	</main>
+</BaseLayout>
+
+<style>
+	.layout {
+		display: grid;
+		grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+		gap: var(--content-gap);
+		align-items: start;
+		margin-top: -68px;
+		position: relative;
+		z-index: 1;
+		padding-bottom: var(--space-7);
+	}
+
+	.layout__side {
+		display: flex;
+		flex-direction: column;
+		gap: var(--content-gap);
+		position: sticky;
+		top: calc(var(--header-height) + var(--space-4));
+	}
+
+	.layout__content {
+		min-width: 0;
+	}
+
+	.post-list {
+		display: flex;
+		flex-direction: column;
+		gap: var(--content-gap);
+	}
+
+	@media (max-width: 1024px) {
+		.layout {
+			grid-template-columns: minmax(0, 1fr);
+			margin-top: calc(var(--space-6) * -1);
+		}
+
+		.layout__side {
+			position: static;
+		}
+	}
+</style>

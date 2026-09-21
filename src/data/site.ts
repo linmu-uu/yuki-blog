@@ -1,0 +1,44 @@
+export const site = {
+	title: "Yuki的小窝",
+	subtitle: "一切奇迹的起点",
+	description: "记录学习和生活的点滴，欢迎一起交流成长。",
+	url: "https://yuki666.online",
+	/** 动态后端（Cloudflare Worker），发动态、读动态都靠它 */
+	momentsApi: "https://moments.yuki666.online",
+	/** 评论后端（自建 Twikoo，同样跑在 Cloudflare Worker 上） */
+	twikooApi: "https://twikoo.yuki666.online",
+	author: "YUKI",
+	avatar: "/avatar.avif",
+	bio: "在代码与游戏的夹缝里打盹的一只猫，把想记住的东西都存在这里。",
+	profileLinks: [
+		{ name: "QQ", url: "https://qm.qq.com/q/CBx9EjuB3M" },
+		{ name: "GitHub", url: "https://github.com/linmu-uu" },
+		{ name: "Email", url: "mailto:2116943621@qq.com" },
+		{ name: "BiliBili", url: "https://space.bilibili.com/1612903352" },
+	],
+	nav: [
+		{ label: "首页", href: "/" },
+		{ label: "文章", href: "/archive" },
+		{ label: "动态", href: "/moments" },
+		{ label: "相册", href: "/gallery" },
+		{ label: "友链", href: "/friends" },
+		{ label: "留言", href: "/guestbook" },
+		{ label: "关于", href: "/about" },
+	],
+	stats: {
+		posts: 3,
+		tags: 6,
+	},
+	announcement: {
+		title: "公告",
+		lead: "欢迎回到小猫窝。",
+		body: "换了新模样——蓝白色的光、缓缓落下的樱瓣，还有一首循环着的歌。文章与相册还在陆续补齐，随意逛逛就好。",
+		linkText: "了解更多",
+		linkUrl: "/about",
+	},
+	music: {
+		title: "正在播放",
+		track: "使一颗心免于哀伤（哼唱）",
+		src: "/audio/bgm.mp3",
+	},
+};

@@ -1,0 +1,75 @@
+---
+interface Props {
+	tags: { name: string; count: number }[];
+}
+
+const { tags } = Astro.props;
+---
+
+<section class="card tagcloud" data-reveal style="--reveal-delay:160ms">
+	<h2 class="section-title">标签</h2>
+	<div class="tagcloud__list">
+		{
+			tags.map((tag) => (
+				<a
+					class="tagcloud__tag"
+					href={`/archive?tag=${encodeURIComponent(tag.name)}`}
+					data-tint={tag.name.length % 3}
+				>
+					{tag.name}
+					<span class="tagcloud__count">{tag.count}</span>
+				</a>
+			))
+		}
+	</div>
+</section>
+
+<style>
+	.tagcloud {
+		padding: var(--space-5);
+	}
+
+	.tagcloud__list {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+	}
+
+	.tagcloud__tag {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		padding: 5px 12px;
+		border-radius: var(--radius-full);
+		border: 1px solid var(--border);
+		background: rgba(255, 255, 255, 0.03);
+		font-size: var(--text-xs);
+		color: var(--text-muted);
+		transition:
+			color var(--dur) var(--ease-soft),
+			border-color var(--dur) var(--ease-soft),
+			background var(--dur) var(--ease-soft),
+			transform var(--dur) var(--ease-out);
+	}
+
+	.tagcloud__tag:hover {
+		color: var(--text);
+		border-color: rgba(95, 225, 255, 0.55);
+		background: rgba(95, 225, 255, 0.14);
+		transform: translateY(-2px) scale(1.05);
+	}
+
+	.tagcloud__tag[data-tint="1"]:hover {
+		border-color: rgba(var(--halo-rgb), 0.55);
+		background: rgba(var(--halo-rgb), 0.14);
+	}
+
+	.tagcloud__tag[data-tint="2"]:hover {
+		border-color: rgba(185, 139, 255, 0.55);
+		background: rgba(185, 139, 255, 0.14);
+	}
+
+	.tagcloud__count {
+		color: var(--text-dim);
+	}
+</style>

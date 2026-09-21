@@ -1,0 +1,251 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import PageHeader from "../components/PageHeader.astro";
+import Comment from "../components/Comment.astro";
+import { sortedFriends } from "../data/friends";
+import { site } from "../data/site";
+
+const notes = [
+	{ title: "互换原则", content: "请先将本站添加到您的友链页面，确认后会添加您的友链。" },
+	{ title: "链接维护", content: "友链网站长期无法访问或内容违规，将会被移除。" },
+	{ title: "内容要求", content: "内容积极向上，不含有任何色情 / 反动 / 暴力等违法违规内容。" },
+	{ title: "站点要求", content: "支持 HTTPS，以原创内容为主，能够正常访问且有持续更新。" },
+];
+---
+
+<BaseLayout title="友情链接" description="与优秀的朋友们一起成长">
+	<PageHeader title="友情链接" description="与优秀的朋友们一起成长" />
+
+	<main class="shell page-body">
+		<section class="friend-self card" data-reveal>
+			<div class="friend-self__avatar">
+				<img src={site.avatar} alt="" width="72" height="72" />
+			</div>
+			<div class="friend-self__info">
+				<h2>{site.title}</h2>
+				<p>{site.description}</p>
+				<a href={site.url} target="_blank" rel="noreferrer noopener">{site.url}</a>
+			</div>
+			<div class="friend-self__note">
+				<p>
+					想和我换友链的话，把上面的信息拿去用，然后在这页下面留言告诉我你的站点就好啦。
+				</p>
+			</div>
+		</section>
+
+		<ul class="friends">
+			{
+				sortedFriends.map((friend, index) => (
+					<li class="friend card" data-reveal style={`--reveal-delay:${index * 70}ms`}>
+						<a class="friend__link" href={friend.siteurl} target="_blank" rel="noreferrer noopener">
+							{friend.imgurl ? (
+								<img class="friend__avatar" src={friend.imgurl} alt="" loading="lazy" />
+							) : (
+								<span class="friend__avatar friend__avatar--text" aria-hidden="true">
+									{friend.title.slice(0, 1)}
+								</span>
+							)}
+							<div class="friend__body">
+								<h3 class="friend__name">{friend.title}</h3>
+								<p class="friend__desc">{friend.desc}</p>
+								{friend.tags && (
+									<ul class="friend__tags">
+										{friend.tags.map((tag) => (
+											<li>#{tag}</li>
+										))}
+									</ul>
+								)}
+							</div>
+						</a>
+					</li>
+				))
+			}
+		</ul>
+
+		<section class="notes" data-reveal>
+			<h2 class="section-title">友链须知</h2>
+			<div class="notes__grid">
+				{
+					notes.map((note) => (
+						<div class="note card">
+							<h3 class="note__title">{note.title}</h3>
+							<p class="note__body">{note.content}</p>
+						</div>
+					))
+				}
+			</div>
+		</section>
+
+		<Comment title="申请友链 / 留言" />
+	</main>
+</BaseLayout>
+
+<style>
+	.friend-self {
+		display: grid;
+		grid-template-columns: auto minmax(0, 1fr) minmax(0, 260px);
+		gap: var(--space-5);
+		align-items: center;
+		padding: var(--space-5);
+		margin-bottom: var(--space-6);
+	}
+
+	.friend-self__avatar {
+		width: 72px;
+		height: 72px;
+		border-radius: var(--radius-sm);
+		padding: 2px;
+		background: conic-gradient(from 140deg, #128afa, #5fe1ff, #ffe08a, #128afa);
+	}
+
+	.friend-self__avatar img {
+		width: 100%;
+		height: 100%;
+		border-radius: calc(var(--radius-sm) - 2px);
+		object-fit: cover;
+	}
+
+	.friend-self__info h2 {
+		margin: 0;
+		font-size: var(--text-xl);
+	}
+
+	.friend-self__info p {
+		margin: var(--space-2) 0;
+		font-size: var(--text-sm);
+		color: var(--text-muted);
+	}
+
+	.friend-self__info a {
+		font-size: var(--text-xs);
+		color: var(--accent-2);
+	}
+
+	.friend-self__note p {
+		margin: 0;
+		padding-left: var(--space-4);
+		border-left: 2px solid rgba(var(--accent-rgb), 0.5);
+		font-size: var(--text-xs);
+		line-height: 1.8;
+		color: var(--text-dim);
+	}
+
+	.friends {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+		gap: var(--space-4);
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.friend {
+		transition:
+			transform var(--dur) var(--ease-out),
+			border-color var(--dur) var(--ease-soft),
+			box-shadow var(--dur) var(--ease-soft);
+	}
+
+	.friend:hover {
+		transform: translateY(-4px);
+		border-color: rgba(95, 225, 255, 0.4);
+		box-shadow: var(--glow-cyan);
+	}
+
+	.friend__link {
+		display: flex;
+		gap: var(--space-4);
+		padding: var(--space-4);
+	}
+
+	.friend__avatar {
+		width: 56px;
+		height: 56px;
+		border-radius: var(--radius-sm);
+		object-fit: contain;
+		padding: 5px;
+		flex-shrink: 0;
+		border: 1px solid var(--border);
+		background: rgba(255, 255, 255, 0.04);
+	}
+
+	/* 没有图标时用首字母兜底，不出现破图 */
+	.friend__avatar--text {
+		display: grid;
+		place-items: center;
+		object-fit: unset;
+		font-family: var(--font-display);
+		font-size: var(--text-xl);
+		font-weight: 700;
+		background: var(--gradient-soft);
+		color: var(--accent-soft);
+	}
+
+	.friend__body {
+		min-width: 0;
+	}
+
+	.friend__name {
+		margin: 0;
+		font-size: var(--text-base);
+		font-weight: 700;
+	}
+
+	.friend__desc {
+		margin: var(--space-2) 0 0;
+		font-size: var(--text-xs);
+		line-height: 1.7;
+		color: var(--text-muted);
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+	}
+
+	.friend__tags {
+		display: flex;
+		gap: var(--space-3);
+		margin: var(--space-2) 0 0;
+		padding: 0;
+		list-style: none;
+		font-size: var(--text-xs);
+		color: var(--accent-3);
+	}
+
+	.notes {
+		margin-top: var(--space-7);
+	}
+
+	.notes__grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+		gap: var(--space-3);
+	}
+
+	.note {
+		padding: var(--space-4);
+	}
+
+	.note__title {
+		margin: 0 0 var(--space-2);
+		font-size: var(--text-sm);
+		color: var(--accent-soft);
+	}
+
+	.note__body {
+		margin: 0;
+		font-size: var(--text-xs);
+		line-height: 1.75;
+		color: var(--text-muted);
+	}
+
+	@media (max-width: 1024px) {
+		.friend-self {
+			grid-template-columns: auto minmax(0, 1fr);
+		}
+
+		.friend-self__note {
+			grid-column: 1 / -1;
+		}
+	}
+</style>

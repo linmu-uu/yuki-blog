@@ -1,0 +1,90 @@
+/*
+ * Twikoo 暗色适配：把 Twikoo 的默认配色接到本站设计令牌上。
+ * 注意：这个文件必须在 twikoo.css 之后加载。
+ */
+
+.twikoo {
+	color: var(--text);
+}
+
+.twikoo .tk-comments-title,
+.twikoo .tk-nick,
+.twikoo .tk-content,
+.twikoo .tk-admin-comment,
+.twikoo .tk-preview-container {
+	color: var(--text);
+}
+
+.twikoo .tk-time,
+.twikoo .tk-meta-input .el-input__inner::placeholder,
+.twikoo .tk-comment-count,
+.twikoo .tk-sort-select,
+.twikoo .tk-login-msg,
+.twikoo .tk-footer {
+	color: var(--text-muted);
+}
+
+.twikoo .tk-action-link,
+.twikoo .tk-action-icon,
+.twikoo .tk-expand,
+.twikoo .tk-nick-link:hover,
+.twikoo .tk-login-msg a,
+.twikoo .tk-panel-logout {
+	color: var(--accent);
+}
+
+.twikoo .tk-submit,
+.twikoo .tk-meta-input,
+.twikoo .tk-admin,
+.twikoo .tk-panel,
+.twikoo .tk-preview-container {
+	background: rgba(255, 255, 255, 0.04) !important;
+	border: 1px solid var(--border) !important;
+	border-radius: var(--radius) !important;
+}
+
+.twikoo input,
+.twikoo textarea,
+.twikoo .el-input__inner,
+.twikoo .tk-input {
+	background: rgba(255, 255, 255, 0.05) !important;
+	border: 1px solid var(--border) !important;
+	border-radius: var(--radius-sm) !important;
+	color: var(--text) !important;
+}
+
+.twikoo input:focus,
+.twikoo textarea:focus,
+.twikoo .el-input__inner:focus {
+	border-color: rgba(var(--accent-rgb), 0.55) !important;
+	outline: none !important;
+}
+
+.twikoo button,
+.twikoo .tk-submit-btn {
+	border-radius: var(--radius-sm) !important;
+}
+
+.twikoo .tk-row.actions .tk-submit-btn,
+.twikoo .tk-row.actions button {
+	background: var(--gradient-accent) !important;
+	border: none !important;
+	color: #12101f !important;
+	font-weight: 700;
+	padding: 6px 18px;
+}
+
+.twikoo .tk-avatar,
+.twikoo .tk-avatar-img {
+	border-radius: 50%;
+}
+
+.twikoo .tk-replies,
+.twikoo .tk-comment {
+	border-color: var(--border) !important;
+}
+
+.twikoo .tk-pagination,
+.twikoo .tk-sort {
+	color: var(--text-muted);
+}
