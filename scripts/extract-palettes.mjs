@@ -61,13 +61,19 @@ function hslToHex(h, s, l) {
  * 蔚蓝档案主色调约束
  *
  * 壁纸的色相跨度可能很大（暖橙、粉红、青绿都有），全部硬夹成蓝会让每张图看起来都一样。
- * 所以按角色分层放权：
- *   - 主色：只允许偏离 BA 蓝 ±40° 左右 —— 站点调性还是蔚蓝档案
- *   - 辅色：允许 ±72°，青/紫/粉都能留下自己的味道
- *   - 点缀色（accent-3 / 光环）：基本放开（±119°），暖色也能露出来
- * 这样换壁纸时既不会跑偏，又能明显看出「这次是紫的、那次是青的、下一张偏暖」。
+ * 所以按角色分层放权，但整体收在蔚蓝档案的调性里：
+ *   - 主色：±27°（守紧一点，换图也是 BA 蓝）
+ *   - 辅色：±43°，青 / 紫还能看出差别
+ *   - 点缀色（accent-3 / 光环）：±65°，暖色点缀不至于完全没有
+ * 想更保守 / 更放开，就改下面这三个数（单位是色相环上的比例，1 = 360°）。
  */
 const HUE_TARGET = 0.585;
+
+const HUE_LIMITS = {
+	primary: 0.075, // ≈27°
+	secondary: 0.12, // ≈43°
+	tertiary: 0.18, // ≈65°
+};
 
 function constrainHue(h, limit) {
 	let diff = h - HUE_TARGET;
@@ -159,9 +165,11 @@ async function analyse(file) {
 		return `#${[r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("")}`;
 	};
 
-	const accent = primary ? normalise(primary.color, 0.94, 0.66, 0.11) : "#3b9bff";
-	const accent2 = secondary ? normalise(secondary.color, 0.9, 0.74, 0.2) : "#5fe1ff";
-	const accent3 = tertiary ? normalise(tertiary.color, 0.92, 0.8, 0.33) : lighten(accent2, 0.45);
+	const accent = primary ? normalise(primary.color, 0.94, 0.66, HUE_LIMITS.primary) : "#3b9bff";
+	const accent2 = secondary ? normalise(secondary.color, 0.9, 0.74, HUE_LIMITS.secondary) : "#5fe1ff";
+	const accent3 = tertiary
+		? normalise(tertiary.color, 0.92, 0.8, HUE_LIMITS.tertiary)
+		: lighten(accent2, 0.45);
 
 	const brightness = lumSum / Math.max(pixels, 1);
 
