@@ -7,7 +7,6 @@ import MusicCard from "../components/MusicCard.astro";
 import TagCloud from "../components/TagCloud.astro";
 import PostCard from "../components/PostCard.astro";
 import CalendarCard from "../components/CalendarCard.astro";
-import RecentMoments from "../components/RecentMoments.astro";
 import { albums } from "../data/gallery";
 
 const allPosts = await getCollection("posts", ({ data }) => !data.draft);
@@ -48,6 +47,13 @@ const stats = {
 	<HeroBanner />
 
 	<main class="shell layout" id="main">
+		{/* 左边：个人信息 / 播放器 / 标签，和以前一样 */}
+		<aside class="layout__side">
+			<ProfileCard />
+			<MusicCard />
+			<TagCloud tags={tags} />
+		</aside>
+
 		<div class="layout__content">
 			<h2 class="section-title" data-reveal>最新文章</h2>
 			<div class="post-list">
@@ -69,21 +75,18 @@ const stats = {
 			</div>
 		</div>
 
-		{/* 小部件统一放右边：文章在左、侧栏在右，左侧就不会堆一堆卡片了 */}
-		<aside class="layout__side">
-			<ProfileCard />
+		{/* 右边：日历单独一栏 */}
+		<div class="layout__right">
 			<CalendarCard marks={marks} stats={stats} />
-			<RecentMoments />
-			<MusicCard />
-			<TagCloud tags={tags} />
-		</aside>
+		</div>
 	</main>
 </BaseLayout>
 
 <style>
 	.layout {
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) var(--sidebar-width);
+		/* 左：小组件 ｜ 中：文章 ｜ 右：日历 */
+		grid-template-columns: var(--sidebar-width) minmax(0, 1fr) minmax(260px, 320px);
 		gap: var(--content-gap);
 		align-items: start;
 		margin-top: -68px;
@@ -103,20 +106,23 @@ const stats = {
 		min-width: 0;
 	}
 
+	.layout__right {
+		display: flex;
+		flex-direction: column;
+		gap: var(--content-gap);
+	}
+
 	.post-list {
 		display: flex;
 		flex-direction: column;
 		gap: var(--content-gap);
 	}
 
-	@media (max-width: 1024px) {
+	/* 屏幕不够宽就收回单栏：小部件 → 文章 → 日历 */
+	@media (max-width: 1200px) {
 		.layout {
 			grid-template-columns: minmax(0, 1fr);
 			margin-top: calc(var(--space-6) * -1);
-		}
-
-		.layout__side {
-			position: static;
 		}
 	}
 </style>
