@@ -46,8 +46,6 @@ import { site } from "../data/site";
 	</div>
 
 	<p class="music__hint" data-hint hidden></p>
-
-	<ol class="music__list" data-list></ol>
 </section>
 
 <style>
@@ -242,56 +240,6 @@ import { site } from "../data/site";
 		color: var(--text-dim);
 	}
 
-	.music__list {
-		margin: var(--space-4) 0 0;
-		padding: 0;
-		list-style: none;
-		max-height: 168px;
-		overflow-y: auto;
-		display: flex;
-		flex-direction: column;
-		gap: 2px;
-	}
-
-	.music__list:empty {
-		display: none;
-	}
-
-	.music__item {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		width: 100%;
-		padding: 6px 10px;
-		border-radius: var(--radius-xs);
-		font-size: var(--text-xs);
-		color: var(--text-muted);
-		text-align: left;
-		transition:
-			background var(--dur) var(--ease-soft),
-			color var(--dur) var(--ease-soft);
-	}
-
-	.music__item:hover {
-		background: rgba(255, 255, 255, 0.06);
-		color: var(--text);
-	}
-
-	.music__item.is-current {
-		color: var(--accent);
-		background: var(--gradient-soft);
-	}
-
-	.music__item-index {
-		font-variant-numeric: tabular-nums;
-		opacity: 0.6;
-	}
-
-	.music__item-title {
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
 </style>
 
 <script>
@@ -302,7 +250,6 @@ import { site } from "../data/site";
 		nextMusic,
 		prevMusic,
 		seekMusic,
-		selectTrack,
 		subscribeMusic,
 		toggleMusic,
 		warmUpMusic,
@@ -328,7 +275,6 @@ import { site } from "../data/site";
 		const hint = card.querySelector<HTMLElement>("[data-hint]");
 		const bar = card.querySelector<HTMLElement>("[data-bar]");
 		const progress = card.querySelector<HTMLElement>("[data-progress]");
-		const list = card.querySelector<HTMLElement>("[data-list]");
 
 		// 有远程歌单的话，等用户「想听」的时候再去拉
 		if (site.music.api && !remoteRequested) {
@@ -377,31 +323,6 @@ import { site } from "../data/site";
 			if (hint) {
 				hint.textContent = message;
 				hint.hidden = !message;
-			}
-
-			if (list) {
-				list.replaceChildren(
-					...state.tracks.map((item, index) => {
-						const li = document.createElement("li");
-						const button = document.createElement("button");
-						button.type = "button";
-						button.className = `music__item${index === state.index ? " is-current" : ""}`;
-						button.dataset.track = String(index);
-
-						const number = document.createElement("span");
-						number.className = "music__item-index";
-						number.textContent = String(index + 1).padStart(2, "0");
-
-						const label = document.createElement("span");
-						label.className = "music__item-title";
-						label.textContent = item.title;
-
-						button.append(number, label);
-						button.addEventListener("click", () => selectTrack(index));
-						li.append(button);
-						return li;
-					}),
-				);
 			}
 		});
 	};
