@@ -8,7 +8,12 @@
 
 export interface MusicTrack {
 	title: string;
+	/** 可以直接播的地址；远程歌单里的歌这里是空的，需要按需去取 */
 	src: string;
+	/** 网易云等平台的歌曲 id，用来取播放地址 */
+	id?: number;
+	/** 取到地址的时间戳（地址会过期，超过 10 分钟就重取） */
+	srcAt?: number;
 	cover: string;
 }
 
@@ -32,6 +37,8 @@ let audio: HTMLAudioElement | null = null;
 let ready = false;
 let error = "";
 let saveTimer = 0;
+/** 远程播放地址接口（site.music.urlApi），留空表示只放本地文件 */
+let urlApi = "";
 
 const listeners = new Set<Listener>();
 
@@ -83,14 +90,52 @@ function restore() {
 	}
 }
 
-function loadTrack(autoplay: boolean) {
+/** 远程歌单的播放地址要按需取（地址本身会过期），这里拿到就顺手记 10 分钟 */
+async function resolveSrc(track: MusicTrack): Promise<string | null> {
+	if (track.src && track.srcAt && Date.now() - track.srcAt < 10 * 60 * 1000) return track.src;
+	if (track.src && !track.srcAt) return track.src;
+
+	if (!track.id || !urlApi) return null;
+	try {
+		const response = await fetch(`${urlApi}?id=${track.id}`);
+		if (!response.ok) return null;
+		const data = (await response.json()) as { url?: string | null };
+		if (!data?.url) return null;
+		track.src = data.url;
+		track.srcAt = Date.now();
+		return data.url;
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * 载入当前曲目。远程歌单里可能有拿不到地址的歌（会员/版权限制），
+ * 这种情况自动跳到下一首，最多把整个列表轮一遍，避免卡在一首放不了的歌上。
+ */
+async function loadTrack(autoplay: boolean, skipped = 0): Promise<void> {
 	if (!audio) return;
 	const track = tracks[index];
 	if (!track) return;
 
-	audio.src = track.src;
 	error = "";
 	ready = false;
+	emit();
+
+	const src = await resolveSrc(track);
+	if (!src) {
+		error = "这首歌暂时拿不到播放地址（可能要会员），已跳过";
+		emit();
+		if (skipped < tracks.length - 1 && tracks.length > 1) {
+			window.setTimeout(() => {
+				index = (index + 1) % tracks.length;
+				void loadTrack(autoplay, skipped + 1);
+			}, 1200);
+		}
+		return;
+	}
+
+	audio.src = src;
 	audio.preload = "metadata";
 	audio.load();
 	emit();
@@ -99,7 +144,8 @@ function loadTrack(autoplay: boolean) {
 }
 
 /** 配置播放列表（只认第一次，之后走模块内的状态，切页面不会重置） */
-export function configureMusic(list: MusicTrack[]) {
+export function configureMusic(list: MusicTrack[], options?: { urlApi?: string }) {
+	if (options?.urlApi) urlApi = options.urlApi;
 	if (!audio) createAudio();
 	if (!tracks.length && list.length) tracks = list;
 	restore();
@@ -147,8 +193,11 @@ export function warmUpMusic() {
 
 export async function playMusic() {
 	if (!audio) return;
-	if (!audio.src) {
-		loadTrack(false);
+	// 远程歌单里地址是空的时候，先去取地址再播
+	const current = tracks[index];
+	if (!audio.src || (current && !current.src)) {
+		await loadTrack(false);
+		if (!audio.src) return;
 	}
 	try {
 		await audio.play();
@@ -176,7 +225,7 @@ export function nextMusic() {
 		return;
 	}
 	index = (index + 1) % tracks.length;
-	loadTrack(true);
+	void loadTrack(true);
 }
 
 export function prevMusic() {
@@ -185,14 +234,14 @@ export function prevMusic() {
 		return;
 	}
 	index = (index - 1 + tracks.length) % tracks.length;
-	loadTrack(true);
+	void loadTrack(true);
 }
 
 export function selectTrack(next: number) {
 	if (next < 0 || next >= tracks.length) return;
 	if (next === index && audio && !audio.paused) return;
 	index = next;
-	loadTrack(true);
+	void loadTrack(true);
 }
 
 export function seekMusic(ratio: number) {
@@ -261,13 +310,21 @@ function pickString(item: Record<string, unknown>, keys: string[]) {
 /** 把接口返回的一条记录规整成播放器认识的曲目 */
 function toTrack(item: Record<string, unknown>, fallbackCover: string): MusicTrack | null {
 	const src = pickString(item, ["url", "src", "link", "songUrl", "playUrl"]);
-	if (!src) return null;
+	// 远程歌单往往只给歌曲 id（播放地址要按需取），所以有 id 也算有效曲目
+	const id = Number(item.id ?? item.songId ?? item.songid);
+	const hasId = Number.isFinite(id) && id > 0;
+	if (!src && !hasId) return null;
 
 	const title = pickString(item, ["name", "title", "songName", "songname"]) || "未命名曲目";
 	const artist = pickString(item, ["artist", "singer", "author", "artists"]);
 	const cover = pickString(item, ["pic", "cover", "image", "albumPic"]) || fallbackCover;
 
-	return { title: artist ? `${title} - ${artist}` : title, src, cover };
+	return {
+		id: hasId ? id : undefined,
+		title: artist ? `${title} - ${artist}` : title,
+		src,
+		cover,
+	};
 }
 
 function readRemoteCache(): MusicTrack[] | null {
@@ -336,7 +393,7 @@ export function applyPlaylist(list: MusicTrack[]) {
 
 	if (!audio) createAudio();
 
-	if (wasPlaying) loadTrack(true);
+	if (wasPlaying) void loadTrack(true);
 	else {
 		ready = false;
 		emit();

@@ -28,6 +28,8 @@ const { marks = [], stats } = Astro.props;
 		<span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
 	</div>
 
+	<p class="calendar__today" data-cal-today>今天</p>
+
 	<div class="calendar__grid" data-cal-grid></div>
 
 	<p class="calendar__hint">
@@ -115,6 +117,29 @@ const { marks = [], stats } = Astro.props;
 		font-size: 10px;
 		color: var(--text-dim);
 		text-align: center;
+	}
+
+	/* 当前日期：一眼就能看到「今天几号、星期几」 */
+	.calendar__today {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		margin: var(--space-3) 0 0;
+		padding: 6px 10px;
+		border-radius: var(--radius-xs);
+		background: var(--gradient-soft);
+		font-size: var(--text-xs);
+		color: var(--text-soft);
+		font-variant-numeric: tabular-nums;
+	}
+
+	.calendar__today::before {
+		content: "";
+		width: 6px;
+		height: 6px;
+		border-radius: 50%;
+		background: var(--accent);
+		box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.9);
 	}
 
 	.calendar__grid {
@@ -226,6 +251,7 @@ const { marks = [], stats } = Astro.props;
 
 		const grid = root.querySelector<HTMLElement>("[data-cal-grid]");
 		const monthLabel = root.querySelector<HTMLElement>("[data-cal-month]");
+		const todayLabel = root.querySelector<HTMLElement>("[data-cal-today]");
 		if (!grid || !monthLabel || root.dataset.bound === "1") return;
 
 		root.dataset.bound = "1";
@@ -240,6 +266,14 @@ const { marks = [], stats } = Astro.props;
 		const byDate = new Map(marks.map((mark) => [mark.date, mark]));
 		const today = new Date();
 		let view = new Date(today.getFullYear(), today.getMonth(), 1);
+
+		// 把「今天」写清楚：2026 年 9 月 22 日 星期二
+		if (todayLabel) {
+			const weekdays = ["日", "一", "二", "三", "四", "五", "六"];
+			todayLabel.textContent =
+				`今天 ${today.getFullYear()} 年 ${today.getMonth() + 1} 月 ${today.getDate()} 日 ` +
+				`星期${weekdays[today.getDay()]}`;
+		}
 
 		const iso = (date: Date) =>
 			`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
@@ -309,13 +343,7 @@ const { marks = [], stats } = Astro.props;
 			render(true);
 		});
 
-		// 有文章时默认停在最近一篇的月份，没有就停在当月
-		const latest = marks.map((mark) => mark.date).sort().at(-1);
-		if (latest) {
-			const [y, m] = latest.split("-").map(Number);
-			view = new Date(y, (m ?? 1) - 1, 1);
-		}
-
+		// 默认停在「当月」——当前日期永远看得见，想看发文月份按左右箭头翻
 		render(false);
 	};
 

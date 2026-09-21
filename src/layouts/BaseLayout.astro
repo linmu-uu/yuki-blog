@@ -152,9 +152,11 @@ const themeCss = [
 			// 播放列表：先装本地 public/audio/ 里扫到的曲目
 			const playlistNode = document.getElementById("music-playlist");
 			try {
-				configureMusic(playlistNode?.textContent ? JSON.parse(playlistNode.textContent) : []);
+				configureMusic(playlistNode?.textContent ? JSON.parse(playlistNode.textContent) : [], {
+					urlApi: site.music.urlApi,
+				});
 			} catch {
-				configureMusic([]);
+				configureMusic([], { urlApi: site.music.urlApi });
 			}
 
 			// 有远程歌单（主人自己的 token 链接）就等页面闲下来再拉，不抢首屏带宽

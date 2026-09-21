@@ -29,13 +29,6 @@ export const site = {
 		posts: 3,
 		tags: 6,
 	},
-	announcement: {
-		title: "公告",
-		lead: "欢迎回到小猫窝。",
-		body: "换了新模样——蓝白色的光、缓缓落下的樱瓣，还有一首循环着的歌。文章与相册还在陆续补齐，随意逛逛就好。",
-		linkText: "了解更多",
-		linkUrl: "/about",
-	},
 	music: {
 		title: "正在播放",
 		/**
@@ -43,7 +36,9 @@ export const site = {
 		 * 留空就只用 public/audio/ 里的本地文件；
 		 * 填上之后会在用户第一次想听歌时懒加载，并缓存在本次会话里。
 		 */
-		api: "",
+		api: "https://music.yuki666.online/playlist?id=6677251084",
+		/** 按需取单曲播放地址的接口（远程歌单用；本地文件不需要） */
+		urlApi: "https://music.yuki666.online/url",
 		/**
 		 * 播放列表直接扫 public/audio/ 里的音频文件（往里面丢 mp3 就行）。
 		 * 这里只负责给文件起个好听的中文名：键可以是文件名或去掉扩展名的文件名。
