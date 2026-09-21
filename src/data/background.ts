@@ -21,6 +21,8 @@ export interface GradientPreset {
 export interface WallpaperPalette {
 	accent: string;
 	accent2: string;
+	/** 点缀色：允许更宽的色相范围，暖色壁纸也能留下自己的味道 */
+	accent3?: string;
 	brightness: number;
 	dark: boolean;
 }
@@ -170,25 +172,61 @@ export function lightenHex(hex: string, amount = 0.3): string {
 	return `#${[r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("")}`;
 }
 
+/** 把颜色往黑里压暗，用于深色渐变与底色 */
+export function darkenHex(hex: string, amount = 0.3): string {
+	const value = hex.replace("#", "");
+	const full =
+		value.length === 3
+			? value
+					.split("")
+					.map((c) => c + c)
+					.join("")
+			: value;
+	const mix = (channel: number) => Math.round(channel * (1 - amount));
+	const r = mix(Number.parseInt(full.slice(0, 2), 16));
+	const g = mix(Number.parseInt(full.slice(2, 4), 16));
+	const b = mix(Number.parseInt(full.slice(4, 6), 16));
+	return `#${[r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("")}`;
+}
+
 /** 依据壁纸调色板生成一段 CSS 变量覆盖 */
 export function paletteToCssVars(palette: WallpaperPalette): string {
-	const rgb = hexToRgbParts(palette.accent);
-	const rgb2 = hexToRgbParts(palette.accent2);
-	const soft = lightenHex(palette.accent, 0.42);
-	const deep = lightenHex(palette.accent, 0.12);
+	const accent = palette.accent;
+	const accent2 = palette.accent2;
+	// 老数据没有 accent3 时，用辅色调亮当高光
+	const accent3 = palette.accent3 || lightenHex(accent2, 0.35);
+	const halo = lightenHex(accent3, 0.25);
+
+	const rgb = hexToRgbParts(accent);
+	const rgb2 = hexToRgbParts(accent2);
+	const haloRgb = hexToRgbParts(halo);
+
+	const soft = lightenHex(accent, 0.5);
+	const deep = darkenHex(accent, 0.55);
 	// 壁纸越亮，英雄区压暗得越多，保证标题可读
 	const veil = Math.min(0.86, 0.46 + palette.brightness * 0.55).toFixed(2);
 
 	return [
-		`--accent:${palette.accent}`,
+		`--accent:${accent}`,
 		`--accent-rgb:${rgb}`,
 		`--accent-soft:${soft}`,
-		`--accent-2:${palette.accent2}`,
-		`--gradient-accent:linear-gradient(120deg, ${palette.accent}, ${palette.accent2} 60%, ${soft})`,
-		`--gradient-a:linear-gradient(120deg, ${palette.accent}, ${palette.accent2})`,
-		`--gradient-b:linear-gradient(120deg, ${palette.accent2}, ${soft})`,
+		`--accent-2:${accent2}`,
+		`--accent-3:${accent3}`,
+		`--accent-deep:${deep}`,
+		`--halo:${halo}`,
+		`--halo-rgb:${haloRgb}`,
+		// 描边也跟着壁纸走（透明度压得低，不影响可读性）
+		`--border:rgba(${rgb}, 0.16)`,
+		`--border-strong:rgba(${rgb}, 0.34)`,
+		`--gradient-accent:linear-gradient(120deg, ${accent}, ${accent2} 58%, ${soft})`,
+		`--gradient-a:linear-gradient(120deg, ${accent}, ${accent2})`,
+		`--gradient-b:linear-gradient(120deg, ${accent2}, ${soft} 55%, ${halo})`,
+		`--gradient-c:linear-gradient(120deg, ${accent3}, ${accent})`,
 		`--gradient-soft:linear-gradient(120deg, rgba(${rgb}, 0.22), rgba(${rgb2}, 0.14))`,
-		`--gradient-spectrum:linear-gradient(120deg, ${deep}, ${palette.accent} 30%, ${palette.accent2} 62%, ${soft} 100%)`,
+		`--gradient-spectrum:linear-gradient(120deg, ${deep}, ${accent} 26%, ${accent2} 52%, ${soft} 76%, ${halo})`,
+		`--glow-accent:0 0 0 1px rgba(${rgb}, 0.4), 0 18px 50px -22px rgba(${rgb}, 0.55)`,
+		`--glow-cyan:0 0 0 1px rgba(${rgb2}, 0.34), 0 18px 50px -22px rgba(${rgb2}, 0.45)`,
+		`--glow-halo:0 0 22px rgba(${haloRgb}, 0.55), 0 0 60px rgba(${haloRgb}, 0.28)`,
 		`--hero-veil:${veil}`,
 	].join(";");
 }

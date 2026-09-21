@@ -7,7 +7,7 @@
  * 用法：npm run wallpapers:variants
  */
 
-import { readdir, stat } from "node:fs/promises";
+import { readdir, rm, stat } from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
 
@@ -20,6 +20,17 @@ async function main() {
 	if (!entries.length) {
 		console.log(`没有找到桌面壁纸：${DIR}`);
 		return;
+	}
+
+	// 重新导入壁纸后编号会变，清掉原图已经不存在的小图，免得一直传上去
+	const stale = (await readdir(DIR)).filter(
+		(name) =>
+			/^ba-desktop-\d+-1600\.avif$/.test(name) &&
+			!entries.includes(name.replace(/-1600\.avif$/, ".avif")),
+	);
+	for (const name of stale) {
+		await rm(path.join(DIR, name), { force: true });
+		console.log(`删除过期小图 ${name}`);
 	}
 
 	for (const name of entries) {

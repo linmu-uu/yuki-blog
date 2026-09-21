@@ -60,19 +60,22 @@ function hslToHex(h, s, l) {
 /**
  * 蔚蓝档案主色调约束
  *
- * 壁纸里可能有大片暖橙、粉红之类的颜色，直接拿来当主题色会偏离 BA 的调性。
- * 这里把色相**限制**在蔚蓝档案的标志性区间内（约 180° ~ 234°，青 → 蓝 → 靛），
- * 超出范围的颜色会被夹回来，保证不管换什么壁纸，主色都是 BA 的味道。
+ * 壁纸的色相跨度可能很大（暖橙、粉红、青绿都有），全部硬夹成蓝会让每张图看起来都一样。
+ * 所以按角色分层放权：
+ *   - 主色：只允许偏离 BA 蓝 ±40° 左右 —— 站点调性还是蔚蓝档案
+ *   - 辅色：允许 ±72°，青/紫/粉都能留下自己的味道
+ *   - 点缀色（accent-3 / 光环）：基本放开（±119°），暖色也能露出来
+ * 这样换壁纸时既不会跑偏，又能明显看出「这次是紫的、那次是青的、下一张偏暖」。
  */
-function constrainHue(h) {
-	const target = 0.575;
-	let diff = h - target;
+const HUE_TARGET = 0.585;
+
+function constrainHue(h, limit) {
+	let diff = h - HUE_TARGET;
 	if (diff > 0.5) diff -= 1;
 	if (diff < -0.5) diff += 1;
 
-	const limit = 0.075;
 	const clamped = Math.max(-limit, Math.min(limit, diff));
-	return (target + clamped + 1) % 1;
+	return (HUE_TARGET + clamped + 1) % 1;
 }
 
 async function analyse(file) {
@@ -126,29 +129,46 @@ async function analyse(file) {
 		.filter((item) => item.count > 8)
 		.sort((a, b) => b.score - a.score);
 
-	const normalise = (color, targetSat, targetLum) => {
+	const normalise = (color, targetSat, targetLum, hueLimit) => {
 		const { h, s, l } = rgbToHsl(...color);
 		return hslToHex(
-			constrainHue(h),
+			constrainHue(h, hueLimit),
 			clamp(s * 1.35, 0.5, targetSat),
 			clamp(l, 0.5, targetLum),
 		);
 	};
 
 	const primary = ranked[0];
-	const secondary = ranked.find((item) => {
-		if (!primary) return Boolean(item);
-		const h1 = rgbToHsl(...primary.color).h;
-		const h2 = rgbToHsl(...item.color).h;
-		const diff = Math.min(Math.abs(h1 - h2), 1 - Math.abs(h1 - h2));
-		return diff > 0.06;
-	});
+	const hueDistance = (a, b) => {
+		const diff = Math.abs(rgbToHsl(...a.color).h - rgbToHsl(...b.color).h);
+		return Math.min(diff, 1 - diff);
+	};
+	const pickDistinct = (exclude, minDistance) =>
+		ranked.find((item) => exclude.every((other) => !other || hueDistance(item, other) > minDistance));
+
+	const secondary = pickDistinct([primary], 0.06);
+	const tertiary = pickDistinct([primary, secondary], 0.06);
+
+	// 点缀色兜底：没有第三个色相就用辅色调亮当高光
+	const lighten = (hex, amount) => {
+		const value = hex.replace("#", "");
+		const mix = (channel) => Math.round(channel + (255 - channel) * amount);
+		const r = mix(Number.parseInt(value.slice(0, 2), 16));
+		const g = mix(Number.parseInt(value.slice(2, 4), 16));
+		const b = mix(Number.parseInt(value.slice(4, 6), 16));
+		return `#${[r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("")}`;
+	};
+
+	const accent = primary ? normalise(primary.color, 0.94, 0.66, 0.11) : "#3b9bff";
+	const accent2 = secondary ? normalise(secondary.color, 0.9, 0.74, 0.2) : "#5fe1ff";
+	const accent3 = tertiary ? normalise(tertiary.color, 0.92, 0.8, 0.33) : lighten(accent2, 0.45);
 
 	const brightness = lumSum / Math.max(pixels, 1);
 
 	return {
-		accent: primary ? normalise(primary.color, 0.92, 0.66) : "#3b9bff",
-		accent2: secondary ? normalise(secondary.color, 0.85, 0.74) : "#5fe1ff",
+		accent,
+		accent2,
+		accent3,
 		brightness: Number(brightness.toFixed(3)),
 		dark: brightness < 0.42,
 		sampled: ranked.length,
@@ -166,12 +186,13 @@ for (const { dir, prefix } of DIRS) {
 		continue;
 	}
 	for (const entry of entries.sort()) {
-		if (!entry.endsWith(".avif")) continue;
+		// 只分析实际参与轮换的壁纸：*-1600.avif 是缩小版、schale 之类是早期预设，都不需要
+		if (!/^ba-(desktop|mobile)-\d+\.avif$/.test(entry)) continue;
 		const info = await analyse(path.join(dir, entry));
 		result[`${prefix}${entry}`] = info;
 		count += 1;
 		console.log(
-			`${entry.padEnd(22)} 主色 ${info.accent}  辅色 ${info.accent2}  亮度 ${info.brightness}${info.dark ? "（偏暗）" : ""}`,
+			`${entry.padEnd(22)} 主色 ${info.accent}  辅色 ${info.accent2}  点缀 ${info.accent3}  亮度 ${info.brightness}${info.dark ? "（偏暗）" : ""}`,
 		);
 	}
 }
