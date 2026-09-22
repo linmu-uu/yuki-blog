@@ -411,40 +411,60 @@ button {
    旧页面轻微上移淡出，新页面从下方柔和滑入 —— 追求"顺滑、不晕"的手感
    ========================================================================== */
 
-/* 页面切换：旧页轻微上移淡出、新页柔和滑入（只动 opacity / transform） */
+/*
+ * 页面切换：纯透明度交叉淡入淡出。
+ * 之前带 translateY + scale，全屏缩放要做重采样，在国内网络/集显机器上最容易看出「僵硬」，
+ * 去掉位移与缩放后只剩合成本身，最省也最顺。
+ */
 ::view-transition-old(root) {
-	animation: page-leave 170ms var(--ease-glide) both;
+	animation: page-leave 130ms var(--ease-soft) both;
 }
 
 ::view-transition-new(root) {
-	animation: page-enter 320ms var(--ease-glide) both;
+	animation: page-enter 240ms var(--ease-soft) both;
 }
 
 @keyframes page-leave {
 	to {
 		opacity: 0;
-		transform: translateY(-6px) scale(0.998);
 	}
 }
 
 @keyframes page-enter {
 	from {
 		opacity: 0;
-		transform: translateY(9px) scale(0.997);
 	}
+}
+
+/* 常驻层（背景、花瓣、光标、顶栏…）新旧完全一样，别让它们也参与交叉淡化 */
+::view-transition-old(page-backdrop),
+::view-transition-new(page-backdrop),
+::view-transition-old(petals),
+::view-transition-new(petals),
+::view-transition-old(glow),
+::view-transition-new(glow),
+::view-transition-old(progress),
+::view-transition-new(progress) {
+	animation: none;
 }
 
 /*
  * 切换时先让正文轻轻淡出，再让新页面淡入。
  * 只动 opacity / transform，不碰布局，弱机也不掉帧。
  */
+/*
+ * 切页时不再给正文加「等待变暗」——国内网络下一次切换要等几百毫秒，
+ * 变暗反而让等待变得显眼。等待交给预取 + 缓存去消化。
+ */
 .page-fade {
-	transition: opacity 260ms var(--ease-glide);
+	transition: opacity 200ms var(--ease-soft);
 }
 
-html.is-leaving .page-fade {
-	opacity: 0.5;
-	transition-duration: 150ms;
+/* 站内跳转时内容直接到位：淡入交给视图过渡，避免两层动画叠在一起显得迟钝 */
+html.no-reveal [data-reveal] {
+	opacity: 1;
+	transform: none;
+	transition: none;
 }
 
 /* 顶部栏与背景层固定住，不跟着页面一起动，避免闪烁 */

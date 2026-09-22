@@ -146,6 +146,7 @@ const themeCss = [
 		<script>
 			import { init } from "../scripts/effects";
 			import { initWallpaper, watchWallpaperBreakpoint } from "../scripts/wallpaper";
+			import { initPrefetch } from "../scripts/prefetch";
 			import { configureMusic, loadRemotePlaylist } from "../scripts/music";
 			import { site } from "../data/site";
 
@@ -172,6 +173,7 @@ const themeCss = [
 			}
 
 			init();
+			initPrefetch();
 			initWallpaper();
 			watchWallpaperBreakpoint();
 			/*
@@ -183,6 +185,8 @@ const themeCss = [
 			});
 			document.addEventListener("astro:after-swap", () => {
 				document.documentElement.classList.remove("is-leaving");
+				// 切页后内容立即到位，淡入交给视图过渡
+				document.documentElement.classList.add("no-reveal");
 			});
 			document.addEventListener("astro:page-load", () => {
 				init();

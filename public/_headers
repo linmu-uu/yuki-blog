@@ -52,28 +52,28 @@
 # ---------- HTML 页面 ----------
 
 /
-  Cache-Control: public, max-age=0, stale-while-revalidate=60
+  Cache-Control: public, max-age=0, stale-while-revalidate=120
 
 /archive/
-  Cache-Control: public, max-age=0, stale-while-revalidate=60
+  Cache-Control: public, max-age=0, stale-while-revalidate=120
 
 /moments/
-  Cache-Control: public, max-age=0, stale-while-revalidate=60
+  Cache-Control: public, max-age=0, stale-while-revalidate=120
 
 /gallery/
-  Cache-Control: public, max-age=0, stale-while-revalidate=60
+  Cache-Control: public, max-age=0, stale-while-revalidate=120
 
 /friends/
-  Cache-Control: public, max-age=0, stale-while-revalidate=60
+  Cache-Control: public, max-age=0, stale-while-revalidate=120
 
 /guestbook/
-  Cache-Control: public, max-age=0, stale-while-revalidate=60
+  Cache-Control: public, max-age=0, stale-while-revalidate=120
 
 /about/
-  Cache-Control: public, max-age=0, stale-while-revalidate=60
+  Cache-Control: public, max-age=0, stale-while-revalidate=120
 
 /admin/
-  Cache-Control: public, max-age=0, stale-while-revalidate=60
+  Cache-Control: public, max-age=0, stale-while-revalidate=120
 
 /posts/*
-  Cache-Control: public, max-age=0, stale-while-revalidate=60
+  Cache-Control: public, max-age=0, stale-while-revalidate=120

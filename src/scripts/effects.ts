@@ -28,6 +28,8 @@ function initReveal() {
 	// 只有首次进入才做错开入场；从别的页面切回来时直接显示，
 	// 否则会和页面切换动画叠在一起，看起来忽快忽慢、错位。
 	if (!firstLoad) {
+		// 淡入交给视图过渡；这里直接把元素摆到位，别再多花 520ms 逐项淡入
+		document.documentElement.classList.add("no-reveal");
 		for (const el of targets) {
 			el.style.setProperty("--reveal-delay", "0ms");
 			el.classList.add("is-visible");

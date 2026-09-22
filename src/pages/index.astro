@@ -8,6 +8,7 @@ import TagCloud from "../components/TagCloud.astro";
 import PostCard from "../components/PostCard.astro";
 import CalendarCard from "../components/CalendarCard.astro";
 import { albums } from "../data/gallery";
+import { site } from "../data/site";
 
 const allPosts = await getCollection("posts", ({ data }) => !data.draft);
 const posts = allPosts.sort((a, b) => b.data.published.valueOf() - a.data.published.valueOf());
@@ -43,7 +44,8 @@ const stats = {
 };
 ---
 
-<BaseLayout>
+{/* 首页要调音乐接口，提前把连接建好（国内到 Cloudflare 一次握手不便宜） */}
+<BaseLayout preconnect={[new URL(site.music.api).origin]}>
 	<HeroBanner />
 
 	<main class="shell layout" id="main">
