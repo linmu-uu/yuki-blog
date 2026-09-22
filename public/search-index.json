@@ -1,0 +1,76 @@
+{
+  "generatedAt": "2026-09-22T14:55:58Z",
+  "count": 7,
+  "posts": [
+    {
+      "title": "用 Lua 给博客写个小工具：批量生成站内搜索索引",
+      "url": "/posts/lua-search-index-tool/",
+      "date": "2026-09-22",
+      "category": "建站笔记",
+      "description": "博客一直没有搜索。与其接一个搜索服务，不如用 Lua 写个七十行的小工具：扫 Markdown、解析 front-matter、去掉标记、吐出一份 JSON 索引，顺手把踩到的两个 Lua 坑讲清楚。",
+      "tags": ["Lua", "建站", "工程实践"],
+      "chars": 6756,
+      "text": "博客上线到现在，一直缺个东西：搜索。 站内文章慢慢多起来以后，想找之前写过的东西只能靠翻归档。接一个搜索服务吧，为了六篇文章不值当； 上 Algolia、Meilisearch 之类又要多一个服务、多一份维护。 最后决定：自己写个小工具，把文章压成一份 JSON 索引，前端拿它做纯静态搜索。 而用来写这个工具的语言，正好是前面几篇的主角——Lua。 为什么是 Lua 这个任务的需求很朴素：读一堆文件、切字符串、拼 JSON、写文件。 放在 Lua 里，它大概七十行；放在别的语言里也能写，只是 Lua 有两个额外好处： 前面三篇刚聊完，正好练手；Lua 的 gsub + 模式匹配处理文本特别顺手 它本来就是「宿主负责 IO，Lua 负责编排」的定位，这个工具就是标准的胶水脚本 当然也有短板，而且马上就遇到了： Lua 标准库没有列目录、没有 JSON。前者得借 shell，后者只能手写（顺便把 JSON 转义规则学明白）。 第 0 步：装一个 Lua Windows 上最省事的是 winget： 装完记得重开终端（PATH 是安装时写进环境变量的，老终端读不到），然后： 如果你用 scoop，scoop install lua 也一样——不过 scoop 要拉 GitHub 的 bucket， 网络不通的话还是 winget 稳一点。 工具要做四件事 列出所有文章 —— src/content/posts/.md 解析 front-matter —— 拿标题、日期、标签、简介 把 Markdown 洗成纯文本 —— 搜索不需要代码块和语法符号 输出 JSON —— 给前端用的索引 下面按顺序说，代码在 tools/build-search-index.lua。 一、列目录：标准库不给，就借 shell io.popen 会开一个子进程执行命令，然后你可以像读文件一样读它的输出。 两行里需要注意的： package.config:sub(1, 1) 就是路径分隔符，Windows 上是 \\、其它平台是 /，常用来做平台分支 ls 后面加了 2>/dev/null，目录不存�"
+    },
+    {
+      "title": "Lua 在正经工程里的用法：OpenResty、Redis 脚本、Neovim",
+      "url": "/posts/lua-in-production/",
+      "date": "2026-09-22",
+      "category": "学习笔记",
+      "description": "Lua 不只活在游戏里。OpenResty 用它做网关的鉴权限流，Redis 用它把多条命令压成原子操作，Neovim 拿它当配置语言。三个场景的写法、套路，以及「千万别阻塞宿主」这条共同铁律。",
+      "tags": ["Lua", "工程实践", "后端"],
+      "chars": 6990,
+      "text": "前两篇写了 Lua 的八个坑 和 游戏里的 Lua。这篇换个方向：服务器和编辑器里的 Lua。 Lua 在这类场景里的角色其实很一致——宿主程序负责\"能做什么\"（网络、存储、UI），Lua 负责\"什么时候做、怎么组合\"。所以你会发现三个场景长得完全不一样，但思路是通的。 一、OpenResty：把 Nginx 变成可编程网关 OpenResty = Nginx + LuaJIT + 一堆精心写好的 Lua 库。它在 Nginx 的请求处理流程里插了几个钩子，让你用 Lua 来接管请求。 先记住\"阶段\"这个概念 Nginx 处理一个请求是有固定顺序的，OpenResty 把 Lua 挂在这些阶段上：   阶段   什么时候跑   典型用途     ---   ---   ---     initbylua   master 启动时   加载配置、预编译正则     rewritebylua   改写 URL 之前   重定向、灰度分流     accessbylua   访问控制   鉴权、限流、黑名单     contentbylua   生成响应   直接返回 JSON、编排上游     logbylua   请求结束后   打点、异步统计   同一段代码放在不同阶段，能用的 API 和产生的效果完全不同——这是 OpenResty 最容易绕晕的地方。比如 ngx.say() 只在 contentbylua 里自然，放到 accessbylua 里就会让人困惑。 最小示例：直接返回 JSON 常用套路：access 阶段做鉴权 常用套路：共享内存做限流 luashareddict 是跨 worker 共享的，所以单机限流不用自己搞分布式计数；要多机限流才需要 Redis。 OpenResty 特有的坑 任何阻塞调用都会拖住整个 worker：os.execute、阻塞式 socket、大文件读写都不行。要联网用 ngx.socket.tcp（cosocket，非阻塞），要跑耗时任务用 ngx.timer.at。 跑的是 LuaJIT（5.1 语法）：没有整数/浮点区分，也没有 math.type，从 5.4 抄代码会报错。 logbylua 是同步执行的，别在里面做重活，否则每个请求的收尾都被拖慢。 开发时用 luacodecache off 方便改代码，上线必须打�"
+    },
+    {
+      "title": "Lua 入门：新手最容易踩的八个坑",
+      "url": "/posts/lua-pitfalls/",
+      "date": "2026-09-22",
+      "category": "学习笔记",
+      "description": "从 nil 与 false 的区别，到取长度、pairs 与 ipairs、元表、整数与浮点——把 Lua 新手最常翻车的几个点一次讲清楚，每条都配可运行示例。",
+      "tags": ["Lua", "编程", "踩坑"],
+      "chars": 3443,
+      "text": "Lua 是一门很小、很快、很容易嵌进别的程序的语言：几百 KB 的解释器，语法表一页纸就能写完。 游戏模组、网关配置（OpenResty）、Redis 脚本、编辑器插件都有它的身影。 也正是因为\"小\"，很多在其他语言里被语法强制约束的东西，在 Lua 里全靠自觉。 下面这八个坑，几乎是每个 Lua 新手都要踩一遍的。 一、只有 nil 和 false 是假 C 系语言里 0 是假，JavaScript 里 \"\"、0、NaN 都是假，但 Lua 里只有 nil 和 false 为假。 这个特性在写\"带默认值\"的代码时特别容易翻车： 正确写法是把判断写清楚： 二、# 遇上\"空洞\"表，结果是未定义的 # 只对连续序列可靠。表里一旦出现 nil（\"空洞\"），长度就是未定义行为—— 它可能返回边界中的任意一个，不同版本、不同插入顺序都可能不一样。 如果你的数据确实可能带空洞，用 table.pack 或者自己记个数： 三、ipairs 会在第一个 nil 停下 ipairs 是\"从 1 开始、遇到 nil 就停\"；pairs 是遍历全部键值对，但顺序不保证。 所以： 想要数组顺序遍历、且数据一定连续 → ipairs 想遍历所有键（或者键不是数字） → pairs 想按顺序遍历但对空洞不放心 → 老老实实 for i = 1, n do 四、闭包捕获的是变量，不是值 先看一个\"看起来会错、其实是对的\"的例子： 数值 for 的循环变量每一轮都是新的局部变量，所以三个闭包各自记住了自己的 i。 真正的坑在 while（或者你自己复用的变量）里： 三个函数捕获的是同一个 i，循环结束后它是 4。 要固定住当前值，就多套一层局部变量： 五、元表是 Lua 面向对象的全部 Lua 没有 class，对象靠元表（metatable）拼出来。最常见的组合是两个元方法：index 和 newindex。 几个容易忘的点： Stack.index = Stack 让实例找不到字段时去 Stack 里找方法——忘了这行，方�"
+    },
+    {
+      "title": "游戏里官方支持的 Lua：Garry's Mod、Roblox、FiveM 模组入门",
+      "url": "/posts/lua-in-games/",
+      "date": "2026-09-22",
+      "category": "学习笔记",
+      "description": "三个真正用 Lua 写模组/游戏的官方平台：GMod 的 hook 与 realm、Roblox 的 Luau 与 RemoteEvent、FiveM 的 fxmanifest 与事件系统。附最小可跑示例，以及各自最容易踩的坑。",
+      "tags": ["Lua", "游戏", "模组"],
+      "chars": 7217,
+      "text": "上一篇写了 Lua 的八个坑。这篇聊点好玩的：哪些游戏是真的在用 Lua。 答案是：远比想象中多。Lua 的解释器很小（几百 KB）、启动快、能把宿主程序的对象安全地暴露给脚本， 还天然适合做沙箱——所以游戏引擎特别爱把它嵌进去当脚本层。 下面挑三个「官方支持、社区成熟」的平台：Garry's Mod（工具沙盒）、Roblox（做游戏）、FiveM（GTA V 多人服）。 它们的共同点是：你写的东西是平台允许的，不用担心账号风险，也不需要碰任何注入工具。 先看全貌     Garry's Mod   Roblox   FiveM     ---   ---   ---   ---     Lua 方言   LuaJIT（5.1 语法 + 即时编译）   Luau（带类型标注的方言）   Lua 5.4     你在做什么   改别人的游戏模式   从零做一款游戏   搭 GTA V 的多人服务器     服务端   lua/autorun/server/ 等   ServerScriptService   serverscript     客户端   lua/autorun/client/ 等   StarterPlayerScripts 等   clientscript     通信方式   net 库   RemoteEvent / RemoteFunction   TriggerServerEvent 等     发布   Steam 创意工坊   Roblox 平台一键发布   自己开服 / 上架框架   接下来按平台过一遍，每段都是「结构 → 最小示例 → 特有的坑」。 一、Garry's Mod：hook + realm GMod 是 Source 引擎上的沙盒，写模组就是往 garrysmod/addons/你的插件/lua/ 里丢文件。 目录结构决定\"这段代码跑在哪\" 这个划分是 GMod 最重要的概念：一个 Lua 文件属于哪个 realm，决定了它能调用哪些 API。 在服务端文件里写 LocalPlayer 会直接报错，反过来在客户端里改 player.GetAll() 拿到的实体也改不动服务端状态。 最小示例 hook.Add(事件名, 唯一标识, 回调) 是 GMod 的骨架：引擎在各种时机广播事件，你的代码挂在上面就行。 常用事件有 PlayerSpawn、PlayerDeath、Think（每帧）、HUDPaint（每帧绘制 HUD）。 客户端和服务�"
+    },
+    {
+      "title": "欢迎来到 YUKI 小猫窝",
+      "url": "/posts/hello-yuki/",
+      "date": "2026-09-21",
+      "category": "随笔",
+      "description": "新站开张啦，这里会记录我的学习、生活和各种小折腾。",
+      "tags": ["随笔", "建站"],
+      "chars": 324,
+      "text": "欢迎来到我的小猫窝喵～ 这个新主题是从零开始做的，暗色的底、樱花粒子、还有会跟着鼠标飘的光晕，希望你会喜欢。 接下来会写什么 学习和折腾前端时踩过的坑 一些看过之后想记下来的东西 日常里那些想留住的小瞬间 慢慢写，慢慢长大。"
+    },
+    {
+      "title": "给自己做一套主题是什么体验",
+      "url": "/posts/first-theme/",
+      "date": "2026-09-18",
+      "category": "技术",
+      "description": "从 Firefly 换到自建主题，记录一下布局和动效上的取舍。",
+      "tags": ["前端", "Astro", "设计"],
+      "chars": 515,
+      "text": "之前用的是 Firefly 主题，布局很美，但总想加点属于自己的东西。 布局保留了什么 双侧边栏的结构留下来了：左边放个人资料、公告、音乐、标签，文章页右边放目录。这套骨架被验证过，读起来很顺。 换了什么 底色换成深靛蓝，配上粉紫青的柔光 加了樱花粒子画布，跟着滚动和鼠标轻微浮动 卡片改成玻璃质感，悬停会浮起来 一点心得 动效要克制。飘一点点，比满屏乱飞高级得多。"
+    },
+    {
+      "title": "把静态博客部署到 Cloudflare",
+      "url": "/posts/deploy-notes/",
+      "date": "2026-09-15",
+      "category": "技术",
+      "description": "Workers 静态资源的部署流程，以及踩过的缓存坑。",
+      "tags": ["部署", "Cloudflare", "运维"],
+      "chars": 586,
+      "text": "静态站点部署到 Cloudflare 有两种形态：Pages 和 Workers 静态资源。我用的是后者。 关键一步：缓存头 默认情况下，所有静态资源都返回 Cache-Control: public, max-age=0, must-revalidate，意味着每次访问浏览器都要重新确认一遍。 带内容哈希的文件名（比如 astro/xxx.abc123.js）内容永不改变，可以放心缓存一年： 另一个坑 删文章之后构建会失败，报 ImageNotFound。原因是 Astro 的内容缓存里还留着已删文章的数据，构建前清掉 .astro 和 nodemodules/.astro 就好了。"
+    }
+  ]
+}

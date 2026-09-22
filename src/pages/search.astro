@@ -1,0 +1,342 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import PageHeader from "../components/PageHeader.astro";
+---
+
+<BaseLayout title="搜索" description="在站内文章里找内容">
+	<PageHeader
+		title="搜索"
+		description="标题、标签、简介和正文一起找；按 / 或 Ctrl+K 可以直接跳到输入框。"
+		meta="索引由 Lua 小工具生成"
+	/>
+
+	<main class="shell page-body search">
+		<div class="search__box">
+			<svg class="search__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+				<circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"></circle>
+				<path d="m16.5 16.5 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+				></path>
+			</svg>
+			<input
+				id="search-input"
+				data-search-input
+				type="search"
+				placeholder="比如：Lua、Cloudflare、壁纸…"
+				autocomplete="off"
+				autocapitalize="off"
+				spellcheck="false"
+			/>
+			<span class="search__count" data-search-count></span>
+		</div>
+
+		<ul class="search__list" data-search-results></ul>
+
+		<p class="search__hint" data-search-hint>输入关键词开始，可以空格分隔多个词喵。</p>
+	</main>
+</BaseLayout>
+
+<style>
+	.search {
+		max-width: 900px;
+	}
+
+	.search__box {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
+		padding: 10px 18px;
+		border-radius: var(--radius-full);
+		border: 1px solid var(--border);
+		background: var(--surface);
+		backdrop-filter: blur(12px);
+		transition: border-color var(--dur) var(--ease-soft);
+	}
+
+	.search__box:focus-within {
+		border-color: rgba(var(--accent-rgb), 0.55);
+	}
+
+	.search__icon {
+		width: 20px;
+		height: 20px;
+		color: var(--text-dim);
+		flex-shrink: 0;
+	}
+
+	.search__box input {
+		flex: 1;
+		min-width: 0;
+		border: none;
+		background: none;
+		color: var(--text);
+		font-size: var(--text-base);
+		font-family: inherit;
+		outline: none;
+	}
+
+	.search__count {
+		font-size: var(--text-xs);
+		color: var(--text-dim);
+		font-variant-numeric: tabular-nums;
+		white-space: nowrap;
+	}
+
+	.search__list {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-4);
+		margin: var(--space-6) 0 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.search__item a {
+		display: block;
+		padding: var(--space-4) var(--space-5);
+		border-radius: var(--radius);
+		border: 1px solid var(--border);
+		background: var(--surface);
+		transition:
+			border-color var(--dur) var(--ease-soft),
+			transform var(--dur) var(--ease-spring);
+	}
+
+	.search__item a:hover {
+		border-color: rgba(var(--accent-rgb), 0.45);
+		transform: translateY(-2px);
+	}
+
+	.search__title {
+		font-size: var(--text-base);
+		color: var(--text);
+	}
+
+	.search__meta {
+		margin-top: 6px;
+		font-size: var(--text-xs);
+		color: var(--text-dim);
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-3);
+	}
+
+	.search__excerpt {
+		margin: var(--space-3) 0 0;
+		font-size: var(--text-sm);
+		line-height: 1.8;
+		color: var(--text-soft);
+	}
+
+	.search__excerpt mark,
+	.search__title mark {
+		padding: 0 2px;
+		border-radius: 4px;
+		background: rgba(var(--accent-rgb), 0.22);
+		color: var(--accent);
+	}
+
+	.search__hint {
+		margin: var(--space-6) 0 0;
+		font-size: var(--text-sm);
+		color: var(--text-dim);
+	}
+</style>
+
+<script>
+	interface IndexedPost {
+		title: string;
+		url: string;
+		date: string;
+		category: string;
+		description: string;
+		tags: string[];
+		text: string;
+		chars: number;
+	}
+
+	interface ScoredPost {
+		post: IndexedPost;
+		score: number;
+	}
+
+	const escapeHtml = (text: string) =>
+		text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+	/** 把命中的关键词包成 <mark>，输入先转义再插标签，避免 XSS */
+	const highlight = (text: string, terms: string[]) => {
+		let html = escapeHtml(text);
+		for (const term of terms) {
+			const safe = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+			html = html.replace(new RegExp(safe, "gi"), (match) => `<mark>${match}</mark>`);
+		}
+		return html;
+	};
+
+	/** 截取包含关键词的一小段正文 */
+	const excerpt = (text: string, terms: string[]) => {
+		const lower = text.toLowerCase();
+		let at = -1;
+		for (const term of terms) {
+			const found = lower.indexOf(term);
+			if (found >= 0 && (at < 0 || found < at)) at = found;
+		}
+		if (at < 0) return text.slice(0, 140);
+
+		const start = Math.max(0, at - 50);
+		const piece = text.slice(start, start + 160);
+		return `${start > 0 ? "…" : ""}${piece}${start + 160 < text.length ? "…" : ""}`;
+	};
+
+	let posts: IndexedPost[] = [];
+	let loaded = false;
+
+	const loadIndex = async () => {
+		if (loaded) return posts;
+		try {
+			const response = await fetch("/search-index.json", { cache: "no-store" });
+			const data = (await response.json()) as { posts?: IndexedPost[] };
+			posts = Array.isArray(data.posts) ? data.posts : [];
+		} catch {
+			posts = [];
+		}
+		loaded = true;
+		return posts;
+	};
+
+	const WEIGHTS = { title: 6, tags: 4, description: 2, text: 1 };
+
+	const search = (query: string): ScoredPost[] => {
+		const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
+		if (!terms.length) return [];
+
+		const results: ScoredPost[] = [];
+
+		for (const post of posts) {
+			const haystack = {
+				title: post.title.toLowerCase(),
+				tags: post.tags.join(" ").toLowerCase(),
+				description: post.description.toLowerCase(),
+				text: post.text.toLowerCase(),
+			};
+
+			let score = 0;
+			let matchedAll = true;
+
+			for (const term of terms) {
+				let hit = 0;
+				for (const [field, weight] of Object.entries(WEIGHTS)) {
+					if (haystack[field as keyof typeof haystack].includes(term)) hit += weight;
+				}
+				if (hit === 0) {
+					matchedAll = false;
+					break;
+				}
+				score += hit;
+			}
+
+			if (matchedAll) results.push({ post, score });
+		}
+
+		return results.sort((a, b) => b.score - a.score || a.post.date.localeCompare(b.post.date) * -1);
+	};
+
+	const setupSearch = () => {
+		const input = document.querySelector<HTMLInputElement>("[data-search-input]");
+		const list = document.querySelector<HTMLElement>("[data-search-results]");
+		const count = document.querySelector<HTMLElement>("[data-search-count]");
+		const hint = document.querySelector<HTMLElement>("[data-search-hint]");
+		if (!input || !list) return;
+
+		const render = (query: string) => {
+			const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
+
+			if (!terms.length) {
+				list.replaceChildren();
+				if (count) count.textContent = "";
+				if (hint) {
+					hint.hidden = false;
+					hint.textContent = "输入关键词开始，可以空格分隔多个词喵。";
+				}
+				return;
+			}
+
+			const results = search(query);
+
+			if (count) count.textContent = `${results.length} 条`;
+
+			if (!results.length) {
+				list.replaceChildren();
+				if (hint) {
+					hint.hidden = false;
+					hint.textContent = `没有找到和「${query}」有关的文章喵。`;
+				}
+				return;
+			}
+
+			if (hint) hint.hidden = true;
+
+			list.replaceChildren(
+				...results.map(({ post }) => {
+					const item = document.createElement("li");
+					item.className = "search__item";
+
+					const link = document.createElement("a");
+					link.href = post.url;
+
+					const title = document.createElement("h2");
+					title.className = "search__title";
+					title.innerHTML = highlight(post.title, terms);
+
+					const meta = document.createElement("p");
+					meta.className = "search__meta";
+					const bits = [post.date, post.category, ...post.tags].filter(Boolean);
+					meta.textContent = bits.join(" · ");
+
+					const text = document.createElement("p");
+					text.className = "search__excerpt";
+					text.innerHTML = highlight(excerpt(post.text, terms), terms);
+
+					link.append(title, meta, text);
+					item.append(link);
+					return item;
+				}),
+			);
+		};
+
+		if (input.dataset.bound !== "1") {
+			input.dataset.bound = "1";
+
+			let timer = 0;
+			input.addEventListener("input", () => {
+				window.clearTimeout(timer);
+				timer = window.setTimeout(() => render(input.value.trim()), 80);
+			});
+
+			// 按 / 或 Ctrl+K / Cmd+K 直接聚焦
+			document.addEventListener("keydown", (event) => {
+				const typing = document.activeElement instanceof HTMLInputElement;
+				if (event.key === "/" && !typing) {
+					event.preventDefault();
+					input.focus();
+				}
+				if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+					event.preventDefault();
+					input.focus();
+				}
+			});
+
+			void loadIndex().then(() => {
+				const query = new URLSearchParams(window.location.search).get("q");
+				if (query) {
+					input.value = query;
+					render(query);
+				}
+			});
+
+			input.focus();
+		}
+	};
+
+	setupSearch();
+	document.addEventListener("astro:page-load", setupSearch);
+</script>

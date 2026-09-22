@@ -43,6 +43,10 @@
 /favicon.svg
   Cache-Control: public, max-age=604800
 
+# 搜索索引（Lua 工具生成的静态文件）：缓存 5 分钟
+/search-index.json
+  Cache-Control: public, max-age=300
+
 /apple-touch-icon.png
   Cache-Control: public, max-age=604800
 
