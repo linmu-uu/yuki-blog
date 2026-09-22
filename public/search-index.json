@@ -1,16 +1,26 @@
 {
-  "generatedAt": "2026-09-22T14:55:58Z",
-  "count": 7,
+  "generatedAt": "2026-09-22T14:58:59Z",
+  "count": 8,
   "posts": [
     {
-      "title": "用 Lua 给博客写个小工具：批量生成站内搜索索引",
-      "url": "/posts/lua-search-index-tool/",
+      "title": "一个「纯静态」博客背后的五个 Worker",
+      "url": "/posts/cloudflare-workers-architecture/",
       "date": "2026-09-22",
       "category": "建站笔记",
-      "description": "博客一直没有搜索。与其接一个搜索服务，不如用 Lua 写个七十行的小工具：扫 Markdown、解析 front-matter、去掉标记、吐出一份 JSON 索引，顺手把踩到的两个 Lua 坑讲清楚。",
-      "tags": ["Lua", "建站", "工程实践"],
-      "chars": 6756,
-      "text": "博客上线到现在，一直缺个东西：搜索。 站内文章慢慢多起来以后，想找之前写过的东西只能靠翻归档。接一个搜索服务吧，为了六篇文章不值当； 上 Algolia、Meilisearch 之类又要多一个服务、多一份维护。 最后决定：自己写个小工具，把文章压成一份 JSON 索引，前端拿它做纯静态搜索。 而用来写这个工具的语言，正好是前面几篇的主角——Lua。 为什么是 Lua 这个任务的需求很朴素：读一堆文件、切字符串、拼 JSON、写文件。 放在 Lua 里，它大概七十行；放在别的语言里也能写，只是 Lua 有两个额外好处： 前面三篇刚聊完，正好练手；Lua 的 gsub + 模式匹配处理文本特别顺手 它本来就是「宿主负责 IO，Lua 负责编排」的定位，这个工具就是标准的胶水脚本 当然也有短板，而且马上就遇到了： Lua 标准库没有列目录、没有 JSON。前者得借 shell，后者只能手写（顺便把 JSON 转义规则学明白）。 第 0 步：装一个 Lua Windows 上最省事的是 winget： 装完记得重开终端（PATH 是安装时写进环境变量的，老终端读不到），然后： 如果你用 scoop，scoop install lua 也一样——不过 scoop 要拉 GitHub 的 bucket， 网络不通的话还是 winget 稳一点。 工具要做四件事 列出所有文章 —— src/content/posts/.md 解析 front-matter —— 拿标题、日期、标签、简介 把 Markdown 洗成纯文本 —— 搜索不需要代码块和语法符号 输出 JSON —— 给前端用的索引 下面按顺序说，代码在 tools/build-search-index.lua。 一、列目录：标准库不给，就借 shell io.popen 会开一个子进程执行命令，然后你可以像读文件一样读它的输出。 两行里需要注意的： package.config:sub(1, 1) 就是路径分隔符，Windows 上是 \\、其它平台是 /，常用来做平台分支 ls 后面加了 2>/dev/null，目录不存�"
+      "description": "主站是静态资源，但动态、评论、相册图、音乐歌单、搜索索引各有各的去处。这篇讲这套 Cloudflare Workers 架构怎么搭起来、前端怎么把它们串起来，以及三个真实踩过的坑。",
+      "tags": ["Cloudflare", "架构", "建站"],
+      "chars": 9064,
+      "text": "这个博客对外说是「静态站点」：没有数据库驱动的页面，没有常驻服务器，npm run deploy 一推就上线。 但实际上，它背后跑着五个 Cloudflare Worker。这篇就把这套架构摊开讲讲——为什么这么拆、 前端怎么把它们串起来、以及踩过哪些坑。 全景图   Worker   域名   干什么   数据放哪     ---   ---   ---   ---     firefly   yuki666.online   托管整个静态站点   无（纯静态资源）     yuki-moments   moments.yuki666.online   动态的增删查、配图上传与读取   D1     twikoo-cloudflare   twikoo.yuki666.online   评论系统后端   D1     yuki-music   music.yuki666.online   代理网易云歌单与播放地址   无（边缘缓存）     本地 Lua 工具   —   生成站内搜索索引   产物提交进仓库   为什么拆成这么多个而不是一个？三个理由： 炸一个不连坐：评论后端出问题，动态和站点照常 各自独立部署：改动态不用动主站，改主站不用重发评论 权限边界清楚：只有动态和评论两个 Worker 碰数据库，主站连数据库绑定都没有 代价是多几个域名、多几次 TLS 握手——这个后面单独说怎么缓解。 一、主站：assets-only Worker 主站是\"纯静态\"，所以它的 Worker 里没有一行业务代码，只有一份配置： [assets] 是 Workers 的静态资源托管：把 dist/ 目录整个交给它，请求进来直接命中边缘缓存， 不经过任何脚本。特点： 部署就是上传文件：astro build 产出什么，线上就是什么 public/headers 生效：缓存策略写在文件里，跟着代码走 不消耗 Worker 请求额度（静态资源是单独的计费项） 配置里 Worker 名字还叫 firefly，因为 yuki666.online 这个自定义域名最早绑在它上面。 换名字等于新建一个 Worker，还要去后台把域名搬过去——收益不大，就一直没动。 缓存策略：静态站点的命门 public/headers 里定了两"
+    },
+    {
+      "title": "游戏里官方支持的 Lua：Garry's Mod、Roblox、FiveM 模组入门",
+      "url": "/posts/lua-in-games/",
+      "date": "2026-09-22",
+      "category": "学习笔记",
+      "description": "三个真正用 Lua 写模组/游戏的官方平台：GMod 的 hook 与 realm、Roblox 的 Luau 与 RemoteEvent、FiveM 的 fxmanifest 与事件系统。附最小可跑示例，以及各自最容易踩的坑。",
+      "tags": ["Lua", "游戏", "模组"],
+      "chars": 7217,
+      "text": "上一篇写了 Lua 的八个坑。这篇聊点好玩的：哪些游戏是真的在用 Lua。 答案是：远比想象中多。Lua 的解释器很小（几百 KB）、启动快、能把宿主程序的对象安全地暴露给脚本， 还天然适合做沙箱——所以游戏引擎特别爱把它嵌进去当脚本层。 下面挑三个「官方支持、社区成熟」的平台：Garry's Mod（工具沙盒）、Roblox（做游戏）、FiveM（GTA V 多人服）。 它们的共同点是：你写的东西是平台允许的，不用担心账号风险，也不需要碰任何注入工具。 先看全貌     Garry's Mod   Roblox   FiveM     ---   ---   ---   ---     Lua 方言   LuaJIT（5.1 语法 + 即时编译）   Luau（带类型标注的方言）   Lua 5.4     你在做什么   改别人的游戏模式   从零做一款游戏   搭 GTA V 的多人服务器     服务端   lua/autorun/server/ 等   ServerScriptService   serverscript     客户端   lua/autorun/client/ 等   StarterPlayerScripts 等   clientscript     通信方式   net 库   RemoteEvent / RemoteFunction   TriggerServerEvent 等     发布   Steam 创意工坊   Roblox 平台一键发布   自己开服 / 上架框架   接下来按平台过一遍，每段都是「结构 → 最小示例 → 特有的坑」。 一、Garry's Mod：hook + realm GMod 是 Source 引擎上的沙盒，写模组就是往 garrysmod/addons/你的插件/lua/ 里丢文件。 目录结构决定\"这段代码跑在哪\" 这个划分是 GMod 最重要的概念：一个 Lua 文件属于哪个 realm，决定了它能调用哪些 API。 在服务端文件里写 LocalPlayer 会直接报错，反过来在客户端里改 player.GetAll() 拿到的实体也改不动服务端状态。 最小示例 hook.Add(事件名, 唯一标识, 回调) 是 GMod 的骨架：引擎在各种时机广播事件，你的代码挂在上面就行。 常用事件有 PlayerSpawn、PlayerDeath、Think（每帧）、HUDPaint（每帧绘制 HUD）。 客户端和服务�"
     },
     {
       "title": "Lua 在正经工程里的用法：OpenResty、Redis 脚本、Neovim",
@@ -33,14 +43,14 @@
       "text": "Lua 是一门很小、很快、很容易嵌进别的程序的语言：几百 KB 的解释器，语法表一页纸就能写完。 游戏模组、网关配置（OpenResty）、Redis 脚本、编辑器插件都有它的身影。 也正是因为\"小\"，很多在其他语言里被语法强制约束的东西，在 Lua 里全靠自觉。 下面这八个坑，几乎是每个 Lua 新手都要踩一遍的。 一、只有 nil 和 false 是假 C 系语言里 0 是假，JavaScript 里 \"\"、0、NaN 都是假，但 Lua 里只有 nil 和 false 为假。 这个特性在写\"带默认值\"的代码时特别容易翻车： 正确写法是把判断写清楚： 二、# 遇上\"空洞\"表，结果是未定义的 # 只对连续序列可靠。表里一旦出现 nil（\"空洞\"），长度就是未定义行为—— 它可能返回边界中的任意一个，不同版本、不同插入顺序都可能不一样。 如果你的数据确实可能带空洞，用 table.pack 或者自己记个数： 三、ipairs 会在第一个 nil 停下 ipairs 是\"从 1 开始、遇到 nil 就停\"；pairs 是遍历全部键值对，但顺序不保证。 所以： 想要数组顺序遍历、且数据一定连续 → ipairs 想遍历所有键（或者键不是数字） → pairs 想按顺序遍历但对空洞不放心 → 老老实实 for i = 1, n do 四、闭包捕获的是变量，不是值 先看一个\"看起来会错、其实是对的\"的例子： 数值 for 的循环变量每一轮都是新的局部变量，所以三个闭包各自记住了自己的 i。 真正的坑在 while（或者你自己复用的变量）里： 三个函数捕获的是同一个 i，循环结束后它是 4。 要固定住当前值，就多套一层局部变量： 五、元表是 Lua 面向对象的全部 Lua 没有 class，对象靠元表（metatable）拼出来。最常见的组合是两个元方法：index 和 newindex。 几个容易忘的点： Stack.index = Stack 让实例找不到字段时去 Stack 里找方法——忘了这行，方�"
     },
     {
-      "title": "游戏里官方支持的 Lua：Garry's Mod、Roblox、FiveM 模组入门",
-      "url": "/posts/lua-in-games/",
+      "title": "用 Lua 给博客写个小工具：批量生成站内搜索索引",
+      "url": "/posts/lua-search-index-tool/",
       "date": "2026-09-22",
-      "category": "学习笔记",
-      "description": "三个真正用 Lua 写模组/游戏的官方平台：GMod 的 hook 与 realm、Roblox 的 Luau 与 RemoteEvent、FiveM 的 fxmanifest 与事件系统。附最小可跑示例，以及各自最容易踩的坑。",
-      "tags": ["Lua", "游戏", "模组"],
-      "chars": 7217,
-      "text": "上一篇写了 Lua 的八个坑。这篇聊点好玩的：哪些游戏是真的在用 Lua。 答案是：远比想象中多。Lua 的解释器很小（几百 KB）、启动快、能把宿主程序的对象安全地暴露给脚本， 还天然适合做沙箱——所以游戏引擎特别爱把它嵌进去当脚本层。 下面挑三个「官方支持、社区成熟」的平台：Garry's Mod（工具沙盒）、Roblox（做游戏）、FiveM（GTA V 多人服）。 它们的共同点是：你写的东西是平台允许的，不用担心账号风险，也不需要碰任何注入工具。 先看全貌     Garry's Mod   Roblox   FiveM     ---   ---   ---   ---     Lua 方言   LuaJIT（5.1 语法 + 即时编译）   Luau（带类型标注的方言）   Lua 5.4     你在做什么   改别人的游戏模式   从零做一款游戏   搭 GTA V 的多人服务器     服务端   lua/autorun/server/ 等   ServerScriptService   serverscript     客户端   lua/autorun/client/ 等   StarterPlayerScripts 等   clientscript     通信方式   net 库   RemoteEvent / RemoteFunction   TriggerServerEvent 等     发布   Steam 创意工坊   Roblox 平台一键发布   自己开服 / 上架框架   接下来按平台过一遍，每段都是「结构 → 最小示例 → 特有的坑」。 一、Garry's Mod：hook + realm GMod 是 Source 引擎上的沙盒，写模组就是往 garrysmod/addons/你的插件/lua/ 里丢文件。 目录结构决定\"这段代码跑在哪\" 这个划分是 GMod 最重要的概念：一个 Lua 文件属于哪个 realm，决定了它能调用哪些 API。 在服务端文件里写 LocalPlayer 会直接报错，反过来在客户端里改 player.GetAll() 拿到的实体也改不动服务端状态。 最小示例 hook.Add(事件名, 唯一标识, 回调) 是 GMod 的骨架：引擎在各种时机广播事件，你的代码挂在上面就行。 常用事件有 PlayerSpawn、PlayerDeath、Think（每帧）、HUDPaint（每帧绘制 HUD）。 客户端和服务�"
+      "category": "建站笔记",
+      "description": "博客一直没有搜索。与其接一个搜索服务，不如用 Lua 写个七十行的小工具：扫 Markdown、解析 front-matter、去掉标记、吐出一份 JSON 索引，顺手把踩到的两个 Lua 坑讲清楚。",
+      "tags": ["Lua", "建站", "工程实践"],
+      "chars": 6756,
+      "text": "博客上线到现在，一直缺个东西：搜索。 站内文章慢慢多起来以后，想找之前写过的东西只能靠翻归档。接一个搜索服务吧，为了六篇文章不值当； 上 Algolia、Meilisearch 之类又要多一个服务、多一份维护。 最后决定：自己写个小工具，把文章压成一份 JSON 索引，前端拿它做纯静态搜索。 而用来写这个工具的语言，正好是前面几篇的主角——Lua。 为什么是 Lua 这个任务的需求很朴素：读一堆文件、切字符串、拼 JSON、写文件。 放在 Lua 里，它大概七十行；放在别的语言里也能写，只是 Lua 有两个额外好处： 前面三篇刚聊完，正好练手；Lua 的 gsub + 模式匹配处理文本特别顺手 它本来就是「宿主负责 IO，Lua 负责编排」的定位，这个工具就是标准的胶水脚本 当然也有短板，而且马上就遇到了： Lua 标准库没有列目录、没有 JSON。前者得借 shell，后者只能手写（顺便把 JSON 转义规则学明白）。 第 0 步：装一个 Lua Windows 上最省事的是 winget： 装完记得重开终端（PATH 是安装时写进环境变量的，老终端读不到），然后： 如果你用 scoop，scoop install lua 也一样——不过 scoop 要拉 GitHub 的 bucket， 网络不通的话还是 winget 稳一点。 工具要做四件事 列出所有文章 —— src/content/posts/.md 解析 front-matter —— 拿标题、日期、标签、简介 把 Markdown 洗成纯文本 —— 搜索不需要代码块和语法符号 输出 JSON —— 给前端用的索引 下面按顺序说，代码在 tools/build-search-index.lua。 一、列目录：标准库不给，就借 shell io.popen 会开一个子进程执行命令，然后你可以像读文件一样读它的输出。 两行里需要注意的： package.config:sub(1, 1) 就是路径分隔符，Windows 上是 \\、其它平台是 /，常用来做平台分支 ls 后面加了 2>/dev/null，目录不存�"
     },
     {
       "title": "欢迎来到 YUKI 小猫窝",
