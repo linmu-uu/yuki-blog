@@ -20,8 +20,8 @@
 
 ## 二、当前状态快照（2026-09-24）
 
-- 主站：**10 篇文章**、搜索索引 48765 字；构建 **20 个页面**约 1.5 秒；工作区干净
-- 主站线上版本：`467a4343-e773-4946-a315-03ea74f41e2a`（Worker 名 `firefly`，第四轮部署）
+- 主站：**11 篇文章**、搜索索引 54634 字；构建 **21 个页面**约 1.5 秒；工作区干净
+- 主站线上版本：`de9e7ba0-08f5-480b-b7e0-e9573f630670`（Worker 名 `firefly`；第四轮部署两次：先上壁纸，后上新文章）
 - 壁纸轮换：`ba-*` 10 张 + **`ai-*` 4 张**（白子雨夜 / 优香教室 / 星野黄昏 / 三一教堂），桌面 2560 与 1600 两档、手机 1080×1920
 - 线上抽查：真机 Chromium 开首页 12 次，命中 `ai-desktop-03/04` 共 3 次，主题色随壁纸变化正常
 - 音乐接口线上版本：`b5196ea7-5a41-4b10-b5a3-10f1070a7e39`
@@ -138,7 +138,9 @@ AI 图转 1080×1920 手机版时，`position: sharp.strategy.attention` 会被�
 - [x] 音频 `bgm.mp3` 已压到 102kbps（497KB，原来 936KB）
 - [x] 动态里的孤儿配图已清理（实际 3 张）
 - [ ] 加完文章记得跑 `npm run search:index`（RSS / 站点地图是构建时自动生成的，不用管）
-- [ ] 音乐：网易云有些歌需要会员/版权，拿不到播放地址会自动跳过；把 `NETEASE_COOKIE` 存成 `yuki-music` 的 secret 可以解锁更多
+- [ ] 音乐 cookie **仍未配置**（`https://music.yuki666.online/` 返回 `hasCookie:false`）：实测默认歌单 10 首里只有 **4 首**能拿到播放地址，
+  其余 6 首是 `code=404 reason=1`（会员/版权限制）。钥匙是浏览器里 `music.163.com` 的 Cookie（含 `MUSIC_U=`），
+  跑 `npx wrangler secret put NETEASE_COOKIE` 存进 `yuki-music`；对照脚本在证据目录（`music-check.mjs`，跑 `node music-check.mjs after` 再统计一次）
 - [x] AI 壁纸已上线（第四轮）：**没走 ComfyUI 的放大路线**，改用 imagegen 技能直接出 2560×1440 原图，
   再 `npm run wallpapers:ai` → `npm run wallpapers:palette` → 构建 → 部署，线上已验证
 - [ ] ComfyUI 那条路留作备选（模型与配方见第八节），放大模型 `4x-UltraSharp.pth` 仍未装
@@ -246,7 +248,7 @@ blue archive, <角色名> (blue archive), 1girl, solo, cowboy shot, <发色/瞳�
 
 ### 补充：线上那 4 张其实不是 ComfyUI 出的
 
-第四轮改用了 imagegen 技能直接生成 **2560×1440** 原图（`output/imagegen/01-shiroko-neon-night.png`、
+第四轮改用了 imagegen 技能直接生成 **2560 宽**原图（三张 2560×1707、一张 2560×1440：`output/imagegen/01-shiroko-neon-night.png`、
 `02-yuuka-window.png`、`03-hoshino-sunset.png`、`04-trinity-cathedral.png`，`output/` 已 gitignore），
 再用 `npm run wallpapers:ai` 转成三种规格。好处是不用纠结放大模型；ComfyUI 仍可用于批量换风格。
 
