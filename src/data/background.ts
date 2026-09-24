@@ -1,4 +1,5 @@
 import palettes from "./wallpaper-palettes.json";
+import sizes from "./wallpaper-sizes.json";
 import { readdirSync } from "node:fs";
 import path from "node:path";
 
@@ -59,7 +60,7 @@ function listWallpapers(kind: "desktop" | "mobile"): string[] {
 		return readdirSync(path.resolve("public/wallpaper", kind))
 			.filter((name) => {
 				if (!name.endsWith(".avif")) return false;
-				if (name.includes("-1600.")) return false; // 小图交给 srcset，不进轮换
+				if (/-\d+-\d+\.avif$/.test(name)) return false; // 1600/2560 小图交给 srcset，不进轮换
 				return ALLOWED_PREFIXES.some((prefix) => name.startsWith(`${prefix}${kind}-`));
 			})
 			.sort()
@@ -239,9 +240,24 @@ export interface WallpaperManifest {
  * 桌面壁纸有两档尺寸：1600px 的轻量版（体积大约一半）和 2560px 的原图。
  * 写进 srcset 让浏览器按屏幕宽度自己挑，1080p / 1440p 的屏幕就不用下大图了。
  */
+interface SizeEntry {
+	width: number;
+	candidates?: { src: string; w: number }[];
+}
+
+const sizeTable = sizes as Record<string, SizeEntry | undefined>;
+
 export function wallpaperSrcSet(src: string): string {
-	// 只有桌面图做了 1600px 的轻量版，手机版是竖图，不加候选免得指到不存在的文件
+	// 手机版是竖图，没有候选，免得指到不存在的文件
 	if (!src.endsWith(".avif") || !src.includes("/desktop/")) return "";
+
+	// 新壁纸（AI 那批）在生成时登记了真实候选：1600 / 2560 / 3840
+	const entry = sizeTable[src];
+	if (entry?.candidates?.length) {
+		return entry.candidates.map((item) => `${item.src} ${item.w}w`).join(", ");
+	}
+
+	// 老壁纸没登记尺寸，沿用原来的两档写法
 	return `${src.replace(/\.avif$/, "-1600.avif")} 1600w, ${src} 2560w`;
 }
 

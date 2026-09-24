@@ -21,8 +21,8 @@
 ## 二、当前状态快照（2026-09-24）
 
 - 主站：**11 篇文章**、搜索索引 54634 字；构建 **21 个页面**约 1.5 秒；工作区干净
-- 主站线上版本：`387fdfff-eb77-43b4-92dc-a4cba5607083`（Worker 名 `firefly`；第四轮部署三次：壁纸 → 新文章 → 日历小点修复 + 壁纸锐化）
-- 壁纸轮换：`ba-*` 10 张 + **`ai-*` 4 张**（白子雨夜 / 优香教室 / 星野黄昏 / 三一教堂），桌面 2560 与 1600 两档、手机 1080×1920；转码前统一过一遍轻度 unsharp（见第八节补充）
+- 主站线上版本：`53e9bb49-495e-46a9-9f7f-b575b1b76405`（Worker 名 `firefly`；第四轮部署四次：壁纸 → 新文章 → 日历/锐化 → 壁纸高清化）
+- 壁纸轮换：`ba-*` 10 张 + **`ai-*` 4 张**（白子雨夜 / 优香教室 / 星野黄昏 / 三一教堂），桌面 **3840 / 2560 / 1600** 三档（`srcset` 的真实宽度来自 `src/data/wallpaper-sizes.json`）、手机 1080×1920；母版由 ComfyUI `4x-AnimeSharp` 放大后再转码（见第八节）
 - 线上抽查：真机 Chromium 开首页 12 次，命中 `ai-desktop-03/04` 共 3 次，主题色随壁纸变化正常
 - 音乐接口线上版本：`b5196ea7-5a41-4b10-b5a3-10f1070a7e39`
 - 最近提交：见 `git log`（本轮：新文章 + 音频压缩 + Lua 5.5 兼容修复）
@@ -67,6 +67,7 @@ npx wrangler dev --remote           # 本地直连线上资源调试（注意是
 | --- | --- |
 | 站点标题、导航、社交链接、音乐接口地址 | `src/data/site.ts` |
 | 壁纸白名单（哪些前缀进轮换） | `src/data/background.ts` 的 `ALLOWED_PREFIXES` |
+| 壁纸各档真实宽度（srcset 用） | `src/data/wallpaper-sizes.json`（由 `npm run wallpapers:ai` 写，别手改） |
 | 缓存策略（HTML / 图片 / 索引） | `public/_headers` |
 | 文章字段校验 | `src/content.config.ts` |
 | 部署配置（Worker 名、静态资源目录） | `wrangler.toml` |
@@ -150,6 +151,16 @@ Worker 里 `fetch` 上游立刻抛 `TypeError: Invalid header value.`。症状�
 新旧版本切换 + 边缘缓存，实测两次部署后立刻查新图都是 404，隔几秒后带上随机参数（`?cb=123`）再查就 200、字节数和本地一致。
 所以部署后的验证**别只看第一眼**，等几秒带随机参数复测一次再下结论。
 
+**17. 写补丁脚本时，JS 字符串会把正则的转义吃掉。**
+`replace: 'if (/-\d+-\d+\.avif$/.test(name)) ...'` 在单引号字符串里 `\d` 会变成 `d`、`\.` 会变成 `.`，
+结果生成出 `/-d+-d+.avif$/` 这种永远匹配不上的正则——表现是轮换清单里混进了 `-1600/-2560` 小图（首屏随机挑到小图就糊）。
+改写补丁时用 `String.raw`，或者干脆双写反斜杠；改完**一定要回读文件确认**（`Select-String` 看一眼那行）。
+
+**18. srcset 的宽度描述符必须写真实宽度，而且它会影响浏览器挑哪一档。**
+老代码给所有桌面图写死 `2560w`，但 `ba-desktop-01` 其实只有 1920 宽——描述符和事实不符，浏览器会挑错档。
+现在 AI 那批由 `wallpaper-sizes.json` 提供 1600/2560/3840 的真实宽度。另外实测：**2560×1600 @150% 缩放的屏（视口 1706.67 CSS px、DPR 1.5）**
+因为 `2560 / 1706.67 = 1.4997 < 1.5`，Chrome 会跳过 2560 档直接下 **3840 母版**（390KB）——效果更清晰，但流量比预期大，心里有数就行。
+
 ## 六、待办 / 已知问题
 
 - [x] `yuki-moments` 已 `git init` 并提交首次快照（commit `2abb539`，.gitignore 已排除 node_modules/.wrangler/.dev.vars）
@@ -160,8 +171,10 @@ Worker 里 `fetch` 上游立刻抛 `TypeError: Invalid header value.`。症状�
 - [x] 音乐 cookie 已配好（2026-09-24）：默认歌单实测 **4/10 → 8/10** 能播（`hasCookie:true`）。
   剩下两首 `FRND - Before U I Didn't Exist`、`FRND - Erase` 是 `code=404 reason=null`，网易云那边本身没版权，配 cookie 也拿不到，只能换歌
 - [ ] 网易云 cookie 会过期（几个月到一年），哪天歌又播不动了就重新抄一次；上传方式见踩坑 14
-- [x] AI 壁纸已上线（第四轮）：**没走 ComfyUI 的放大路线**，改用 imagegen 技能直接出 2560×1440 原图，
-  再 `npm run wallpapers:ai` → `npm run wallpapers:palette` → 构建 → 部署，线上已验证
+- [x] AI 壁纸已上线并高清化（第四轮）：原图 → ComfyUI `4x-AnimeSharp` 放大到 10240 宽 → `npm run wallpapers:ai`
+  出 3840/2560/1600 + 手机四档 → `wallpapers:palette` → 构建 → 部署
+- [ ] 想要**更明显**的清晰度提升，只能从源头重出图：要么 imagegen CLI 直接出 4K（需要 `OPENAI_API_KEY` 且有额度、代理出口在受支持地区），
+  要么在 ComfyUI 里跑 SDXL img2img / hires（能补细节，但画风会漂一点、耗时约 5–8 分钟一张）
 - [ ] ComfyUI 那条路留作备选（模型与配方见第八节），放大模型 `4x-UltraSharp.pth` 仍未装
 - [ ] 老壁纸里几张原生宽度不到 2560（`ba-desktop-01` 只有 1920、`ba-desktop-06` 是 2000），
   在 2560 宽的屏上首屏大图会被 `object-fit: cover` 拉伸变糊；有空重导或换掉
@@ -279,6 +292,22 @@ blue archive, <角色名> (blue archive), 1girl, solo, cowboy shot, <发色/瞳�
 体积 2560 宽 179KB → 210KB（+17%），肉眼可见更实；quality 提到 72 涨 56% 却没什么收益，不值得。
 **别把 sigma 上到 1.2**，头发边缘会出现白边。另外首屏大图的入场动画原本停在 `scale(1.02)`，
 等于整张 2560 图被永久重采样一次，已改成停在 `scale(1)`。
+
+### 高清化：ComfyUI 4x-AnimeSharp（2026-09-24 深夜）
+
+嫌上面那版还不够清晰，接着做了这条路：**用 AI 放大模型给原图补细节，再出多档尺寸**。
+
+- 放大模型：`ComfyUI/models/upscale_models/4x-AnimeSharp.pth`（本来就有）和 `4x-UltraSharp.pth`（这轮从 HF 下的，走 7890 代理，64MB）
+- 工作流：`LoadImage → UpscaleModelLoader → ImageUpscaleWithModel → SaveImage`，走 HTTP API（`127.0.0.1:8188`）
+  驱动脚本在证据目录 `comfy-upscale.mjs`；放大节点自带 512 分块 + OOM 自动降块，2560→10240 一次跑完
+- 速度：**每张 38–45 秒**（含首次加载模型），产出 10240×6828 的 PNG（38–65MB），落在 `output/imagegen-hires/`（已 gitignore）
+- 选型：AnimeSharp 与 UltraSharp 在 1:1 下几乎看不出差别（锐度 89.58 / 89.81），AnimeSharp 文件更小（53.7MB vs 72.5MB）且是动漫专用，所以用它
+- 出档：`npm run wallpapers:ai` 改成从 `imagegen-hires/` 读源，输出 3840 母版 + 2560 + 1600 + 手机 1080×1920
+
+**老实说**：在 2560 设备像素的屏幕上，1:1 对比的锐度只从 89.55 变成 89.60，肉眼提升有限——
+因为画风本身是「磨皮」的，放大模型补不出原图没有的线稿。真正的好处是：① 4K 屏现在有原生 3840 母版；
+② 150% 缩放的屏会超采样（3840 缩到 2560），边缘更干净；③ 手机版也从高清母版重新裁的。
+要更明显的提升就得重出图，见第六节待办。
 
 ## 九、新任务怎么开工
 

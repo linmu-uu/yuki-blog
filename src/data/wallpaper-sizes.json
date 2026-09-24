@@ -1,0 +1,70 @@
+{
+	"/wallpaper/desktop/ai-desktop-01.avif": {
+		"width": 3840,
+		"candidates": [
+			{
+				"src": "/wallpaper/desktop/ai-desktop-01-1600.avif",
+				"w": 1600
+			},
+			{
+				"src": "/wallpaper/desktop/ai-desktop-01-2560.avif",
+				"w": 2560
+			},
+			{
+				"src": "/wallpaper/desktop/ai-desktop-01.avif",
+				"w": 3840
+			}
+		]
+	},
+	"/wallpaper/desktop/ai-desktop-02.avif": {
+		"width": 3840,
+		"candidates": [
+			{
+				"src": "/wallpaper/desktop/ai-desktop-02-1600.avif",
+				"w": 1600
+			},
+			{
+				"src": "/wallpaper/desktop/ai-desktop-02-2560.avif",
+				"w": 2560
+			},
+			{
+				"src": "/wallpaper/desktop/ai-desktop-02.avif",
+				"w": 3840
+			}
+		]
+	},
+	"/wallpaper/desktop/ai-desktop-03.avif": {
+		"width": 3840,
+		"candidates": [
+			{
+				"src": "/wallpaper/desktop/ai-desktop-03-1600.avif",
+				"w": 1600
+			},
+			{
+				"src": "/wallpaper/desktop/ai-desktop-03-2560.avif",
+				"w": 2560
+			},
+			{
+				"src": "/wallpaper/desktop/ai-desktop-03.avif",
+				"w": 3840
+			}
+		]
+	},
+	"/wallpaper/desktop/ai-desktop-04.avif": {
+		"width": 3840,
+		"candidates": [
+			{
+				"src": "/wallpaper/desktop/ai-desktop-04-1600.avif",
+				"w": 1600
+			},
+			{
+				"src": "/wallpaper/desktop/ai-desktop-04-2560.avif",
+				"w": 2560
+			},
+			{
+				"src": "/wallpaper/desktop/ai-desktop-04.avif",
+				"w": 3840
+			}
+		]
+	}
+}
