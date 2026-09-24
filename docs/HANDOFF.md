@@ -131,12 +131,15 @@ Workers 静态资源默认 `not_found_handling = "none"`：建了 `dist/404.html
 - [x] 动态里的孤儿配图已清理（实际 3 张）
 - [ ] 加完文章记得跑 `npm run search:index`（RSS / 站点地图是构建时自动生成的，不用管）
 - [ ] 音乐：网易云有些歌需要会员/版权，拿不到播放地址会自动跳过；把 `NETEASE_COOKIE` 存成 `yuki-music` 的 secret 可以解锁更多
-- [ ] 想继续做 AI 壁纸：需要 OpenAI 账号有额度（目前没有）；代理出口要在受支持地区（香港节点会被拒）；本地绘画方案 ComfyUI 便携包已下好放在 `D:\ComfyUI-dl\ComfyUI_windows_portable_nvidia.7z`（1.8GB），还没解压安装
+- [ ] AI 壁纸：**ComfyUI 已装好、能出图**（详见第八节），下一步是补放大模型 → `wallpapers:import` → `wallpapers:palette` / `wallpapers:variants` → 部署
+- [ ] OpenAI 那条 AI 画图的路依然不通：需要账号有额度（目前没有），且代理出口要在受支持地区（香港节点会被拒）
 - [ ] 国内访问的根本瓶颈是 Cloudflare 没有国内节点（要域名备案才能用国内 CDN），暂未处理
 
 ## 七、环境事实
 
 - 网络：本机代理 `127.0.0.1:7890`（当前出口日本）。GitHub / scoop 需要它；Cloudflare API 直连可用；OpenAI API 需要代理 + 有额度的账号
+- 硬件：**RTX 5070 Laptop GPU（8GB 显存，驱动 617.14）+ Blackwell 架构（`sm_120`）**。
+  D: 盘还剩 90GB 左右（ComfyUI + 模型已占约 12GB）
 - 工具（现在都在 PATH 上，scoop shims）：
   - Node（主站依赖齐全）、wrangler（在 `yuki-theme` / `yuki-moments` 的 devDependencies 里）
   - **Lua 5.5.0**（`scoop install lua`；之前 winget 那个 5.4.6 已经不在机器上了）
@@ -148,11 +151,60 @@ Workers 静态资源默认 `not_found_handling = "none"`：建了 `dist/404.html
   **不用重新下浏览器**。本轮的截图证据在 `C:\Users\ROG\.codex\visualizations\2026\09\24\01a0d3b5-8e2d-7960-9f72-c5d2747e2c5d`。
 - 密钥：动态发布密码、网易云 Cookie 都只存在 Cloudflare secret 里，**不在仓库、也不在本机**
 
-## 八、新任务怎么开工
+## 八、本地 AI 画图（ComfyUI，2026-09-24 装好）
+
+解压位置：`D:\ComfyUI_windows_portable`（3.9GB，来自 `D:\ComfyUI-dl\ComfyUI_windows_portable_nvidia.7z`）。
+自带 `python_embeded`（Python 3.13）+ torch **2.13.0+cu130**，支持列表里有 `sm_120`，
+所以 **RTX 5070 Laptop（8GB 显存、驱动 617.14）能直接跑**，不需要换 torch。
+
+已下载的模型（放在 `ComfyUI\models\checkpoints`）：
+
+| 文件 | 大小 | 用途 |
+| --- | --- | --- |
+| `animagine-xl-4.0.safetensors` | 6.46 GB | 动漫向 SDXL，主力模型 |
+| `sd15-emaonly-fp16.safetensors` | 1.99 GB | SD1.5 官方版，备用 / 快速试参数 |
+
+启动（命令行，保持这个进程不退）：
+
+```powershell
+D:\ComfyUI_windows_portable\python_embeded\python.exe -s D:\ComfyUI_windows_portable\ComfyUI\main.py --windows-standalone-build --listen 127.0.0.1 --port 8188
+```
+
+浏览器开 `http://127.0.0.1:8188` 是图形界面。命令行批量出图本轮写了两个脚本（在
+`C:\Users\ROG\.codex\visualizations\2026\09\24\01a0d3b5-8e2d-7960-9f72-c5d2747e2c5d`）：
+`comfy-generate.js`（第一轮）和 `comfy-round2.js`（第二轮，去了商标），走的是 ComfyUI 的 HTTP API。
+
+实测速度（1216×832、28–30 步、cfg 6、`euler_ancestral`）：**首张约 35s（含加载模型），之后每张 16–18s**。
+
+### 坑：prompt 里写 `blue archive` 会画出商标
+
+模型训练数据里的官方图带 logo，所以正文只要出现 `blue archive` 这个标签，
+成图上就会出现「Blue Archive」商标和一行版权字。负向里加
+`logo, copyright name, artist name, text` 也压不太住，**最有效的做法是正文根本别写这个标签**，
+改用 `official art, anime screencap, very awa` 这类描述来定性风格。
+
+### 还没做
+
+这批图是 1216×832，而 `npm run wallpapers:import` 会把桌面版拉到 **2560 宽**、
+手机版从原图**居中裁成 1080×1920**——直接导入等于放大两倍多，糊。
+要真正上岗得先补个放大模型（例如 `4x-UltraSharp.pth`，约 64MB），
+先放大到 2432×1664 左右再导入，然后照常跑 `wallpapers:palette` / `wallpapers:variants`。
+
+### 本轮生成的图
+
+| 文件（证据目录） | 内容 |
+| --- | --- |
+| `ai-a-night-city.png` / `ai-b-day-sky.png` / `ai-c-holo-scape.png` | 第一轮，画质好但带 BA 商标 |
+| `ai2-d-night-girl.png` | 雨夜霓虹街道 + 白发少女，构图居中，最适合做壁纸 |
+| `ai2-e-rooftop-day.png` | 白昼云海天台 |
+| `ai2-f-holo-hall.png` | 无人物的科幻走廊 |
+
+## 九、新任务怎么开工
 
 在新会话里直接说这句（或把它发给助手）：
 
 > 读 `C:\Users\ROG\Desktop\yuki-theme\docs\HANDOFF.md`，然后按里面的状态继续做博客。
 > 我这边的代理端口是 7890。
 
-想接着做具体某件事，就在后面补一句，例如「继续写文章：性能优化复盘」或「把 ComfyUI 装上试试本地画图」。
+想接着做具体某件事，就在后面补一句，例如「继续写文章：性能优化复盘」
+或「把生成的 AI 壁纸先放大再导进轮换」。
