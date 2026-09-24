@@ -26,10 +26,10 @@ export const site = {
 		{ label: "留言", href: "/guestbook" },
 		{ label: "关于", href: "/about" },
 	],
-	stats: {
-		posts: 3,
-		tags: 6,
-	},
+	/*
+	 * 这里以前有个写死的 stats（posts / tags），发到第 9 篇时数字还停在 3。
+	 * 现在首页资料卡（ProfileCard）直接读内容集合现算，别再往这里塞计数了。
+	 */
 	music: {
 		title: "正在播放",
 		/**

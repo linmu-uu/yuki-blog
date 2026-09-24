@@ -1,7 +1,15 @@
 ---
+import { getCollection } from "astro:content";
 import { site } from "../data/site";
 
-const { posts, tags } = site.stats;
+/*
+ * 文章数 / 标签数从内容集合现算。
+ * 以前这两个数是写死在 src/data/site.ts 里的（发到第 9 篇时还停在 3），
+ * 现在加文章不用再手动改数字。
+ */
+const allPosts = await getCollection("posts", ({ data }) => !data.draft);
+const postCount = allPosts.length;
+const tagCount = new Set(allPosts.flatMap((post) => post.data.tags)).size;
 ---
 
 <section class="card profile" data-reveal>
@@ -23,11 +31,11 @@ const { posts, tags } = site.stats;
 	</ul>
 	<div class="profile__stats">
 		<div class="profile__stat">
-			<span class="profile__value">{posts}</span>
+			<span class="profile__value">{postCount}</span>
 			<span class="profile__label">文章</span>
 		</div>
 		<div class="profile__stat">
-			<span class="profile__value">{tags}</span>
+			<span class="profile__value">{tagCount}</span>
 			<span class="profile__label">标签</span>
 		</div>
 		<div class="profile__stat">
