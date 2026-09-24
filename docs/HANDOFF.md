@@ -3,7 +3,7 @@
 > 用途：这是一个长期在做的个人博客项目。**新开一个 Codex 任务时，让助手先读这份文档**，
 > 就能立刻接上进度，不用把之前几万字的对话重新搬一遍。
 >
-> 最后更新：2026-09-24（第三轮：新文章《SEO 基建》+ 音频瘦身 + 动态孤儿图清理 + 本机工具链）
+> 最后更新：2026-09-24（第四轮：4 张 AI 原创壁纸接入轮换并上线；上一轮是《SEO 基建》文章 + 音频瘦身 + 孤儿图清理）
 
 ## 一、项目地图
 
@@ -21,7 +21,9 @@
 ## 二、当前状态快照（2026-09-24）
 
 - 主站：**10 篇文章**、搜索索引 48765 字；构建 **20 个页面**约 1.5 秒；工作区干净
-- 主站线上版本：`6735adb9-567e-4bfa-9cb6-62371ff65941`（Worker 名 `firefly`）
+- 主站线上版本：`467a4343-e773-4946-a315-03ea74f41e2a`（Worker 名 `firefly`，第四轮部署）
+- 壁纸轮换：`ba-*` 10 张 + **`ai-*` 4 张**（白子雨夜 / 优香教室 / 星野黄昏 / 三一教堂），桌面 2560 与 1600 两档、手机 1080×1920
+- 线上抽查：真机 Chromium 开首页 12 次，命中 `ai-desktop-03/04` 共 3 次，主题色随壁纸变化正常
 - 音乐接口线上版本：`b5196ea7-5a41-4b10-b5a3-10f1070a7e39`
 - 最近提交：见 `git log`（本轮：新文章 + 音频压缩 + Lua 5.5 兼容修复）
 - 主要功能：首页（壁纸轮换 + 跟随壁纸变色）、文章、动态、相册、友链、留言、关于、**搜索**、发布后台 `/admin`、
@@ -43,6 +45,7 @@ npm run deploy           # 构建 + 部署到 Cloudflare（线上生效）
 
 npm run search:index     # 用 Lua 重新生成站内搜索索引（加完文章要跑）
 npm run wallpapers:import    # 从 D:\wallpapers 导入壁纸（压成 AVIF）
+npm run wallpapers:ai        # 把 output/imagegen/*.png（AI 出图）接进轮换：2560 桌面 + 1600 小图 + 1080×1920 竖版
 npm run wallpapers:palette   # 重新提取壁纸配色
 npm run wallpapers:variants  # 生成 1600px 壁纸小图
 npm run gallery:thumbs       # 生成相册缩略图
@@ -123,6 +126,11 @@ Lua 的字符类按字节匹配，`[^,，]` 会把全角逗号的字节也当成
 Workers 静态资源默认 `not_found_handling = "none"`：建了 `dist/404.html` 也不会被用，
 用户看到的是 Cloudflare 自带白板。设成 `"404-page"` 才会返回自己的 404（状态码仍是 404）。
 
+**13. 竖版壁纸别信 sharp 的自动重心。**
+AI 图转 1080×1920 手机版时，`position: sharp.strategy.attention` 会被霓虹灯牌、大片天空带偏：
+白子那张只剩一只手、星野那张整张都是天空。`scripts/prepare-ai-wallpapers.mjs` 里的 `FOCAL_X`
+是逐张手填的焦点横向位置（0=最左，1=最右），换图后**必须自己看一眼竖版再发**。
+
 ## 六、待办 / 已知问题
 
 - [x] `yuki-moments` 已 `git init` 并提交首次快照（commit `2abb539`，.gitignore 已排除 node_modules/.wrangler/.dev.vars）
@@ -131,9 +139,9 @@ Workers 静态资源默认 `not_found_handling = "none"`：建了 `dist/404.html
 - [x] 动态里的孤儿配图已清理（实际 3 张）
 - [ ] 加完文章记得跑 `npm run search:index`（RSS / 站点地图是构建时自动生成的，不用管）
 - [ ] 音乐：网易云有些歌需要会员/版权，拿不到播放地址会自动跳过；把 `NETEASE_COOKIE` 存成 `yuki-music` 的 secret 可以解锁更多
-- [ ] AI 壁纸：**ComfyUI 已装好、能出图，角色配方也定型了**（详见第八节），已经挑出 4 张角色图 + 1 张三一风景；
-  下一步是补放大模型（`4x-UltraSharp.pth`，约 64MB）把 1216×832 放大到 2432×1664 →
-  `wallpapers:import` → `wallpapers:palette` / `wallpapers:variants` → 部署
+- [x] AI 壁纸已上线（第四轮）：**没走 ComfyUI 的放大路线**，改用 imagegen 技能直接出 2560×1440 原图，
+  再 `npm run wallpapers:ai` → `npm run wallpapers:palette` → 构建 → 部署，线上已验证
+- [ ] ComfyUI 那条路留作备选（模型与配方见第八节），放大模型 `4x-UltraSharp.pth` 仍未装
 - [ ] OpenAI 那条 AI 画图的路依然不通：需要账号有额度（目前没有），且代理出口要在受支持地区（香港节点会被拒）
 - [ ] 国内访问的根本瓶颈是 Cloudflare 没有国内节点（要域名备案才能用国内 CDN），暂未处理
 
@@ -150,7 +158,8 @@ Workers 静态资源默认 `not_found_handling = "none"`：建了 `dist/404.html
   - 注意：`scoop bucket add main` 是这轮才加的，之前 scoop 只有 7zip/mingw 两个 app、没有 bucket
 - 截图验证：本机已缓存 Playwright 的 Chromium（`C:\Users\ROG\AppData\Local\ms-playwright\chromium-1208\chrome-win64\chrome.exe`）。
   任意可写目录里 `npm install playwright-core`（走 7890 代理），再 `chromium.launch({ executablePath })` 就能截图，
-  **不用重新下浏览器**。本轮的截图证据在 `C:\Users\ROG\.codex\visualizations\2026\09\24\01a0d3b5-8e2d-7960-9f72-c5d2747e2c5d`。
+  **不用重新下浏览器**；本轮实测可以直接 `createRequire` 借用
+  `C:\Users\ROG\.codex\visualizations\2026\09\24\01a0d3b5-8e2d-7960-9f72-c5d2747e2c5d\node_modules\playwright-core`，不用重装。本轮的截图证据在 `C:\Users\ROG\.codex\visualizations\2026\09\24\01a0d3b5-8e2d-7960-9f72-c5d2747e2c5d`。
 - 密钥：动态发布密码、网易云 Cookie 都只存在 Cloudflare secret 里，**不在仓库、也不在本机**
 
 ## 八、本地 AI 画图（ComfyUI，2026-09-24 装好）
@@ -235,12 +244,21 @@ blue archive, <角色名> (blue archive), 1girl, solo, cowboy shot, <发色/瞳�
 脚本：`comfy-generate.js`（第一轮）、`comfy-round2.js`、`comfy-round3.js`（角色 + 风景）、
 `comfy-round4.js`（人物拉近）。想复现直接 `node comfy-round4.js`（服务得先起）。
 
+### 补充：线上那 4 张其实不是 ComfyUI 出的
+
+第四轮改用了 imagegen 技能直接生成 **2560×1440** 原图（`output/imagegen/01-shiroko-neon-night.png`、
+`02-yuuka-window.png`、`03-hoshino-sunset.png`、`04-trinity-cathedral.png`，`output/` 已 gitignore），
+再用 `npm run wallpapers:ai` 转成三种规格。好处是不用纠结放大模型；ComfyUI 仍可用于批量换风格。
+
 ## 九、新任务怎么开工
 
 在新会话里直接说这句（或把它发给助手）：
 
 > 读 `C:\Users\ROG\Desktop\yuki-theme\docs\HANDOFF.md`，然后按里面的状态继续做博客。
 > 我这边的代理端口是 7890。
+
+另外：单个会话聊太久、贴了太多图片/长日志时，模型接口会报 **413 Payload Too Large（body 超限）**。
+所以每轮收工都要把状态写回这份 HANDOFF，然后**直接开新会话**接着做，别在一个会话里硬撑。
 
 想接着做具体某件事，就在后面补一句，例如「继续写文章：性能优化复盘」
 或「把生成的 AI 壁纸先放大再导进轮换」。
