@@ -3,7 +3,7 @@
 > 用途：这是一个长期在做的个人博客项目。**新开一个 Codex 任务时，让助手先读这份文档**，
 > 就能立刻接上进度，不用把之前几万字的对话重新搬一遍。
 >
-> 最后更新：2026-09-24
+> 最后更新：2026-09-24（第二轮：RSS / 站点地图 / 404 / 分享卡片）
 
 ## 一、项目地图
 
@@ -20,11 +20,13 @@
 
 ## 二、当前状态快照（2026-09-24）
 
-- 主站：**9 篇文章**、搜索索引 41948 字；构建 18 个页面约 1.4 秒；工作区干净
-- 主站线上版本：`57c6c78e-303f-4b95-ab1e-ff1893903066`（Worker 名 `firefly`）
+- 主站：**9 篇文章**、搜索索引 41948 字；构建 **19 个页面**（多了 `404.html`）约 1.4 秒；工作区干净
+- 主站线上版本：`20e559e9-18ad-4f47-b3c0-ec1b256f244a`（Worker 名 `firefly`）
 - 音乐接口线上版本：`b5196ea7-5a41-4b10-b5a3-10f1070a7e39`
-- 最近提交：`9b57534`（新增《静态博客怎么选》）
-- 主要功能：首页（壁纸轮换 + 跟随壁纸变色）、文章、动态、相册、友链、留言、关于、**搜索**、发布后台 `/admin`
+- 最近提交：`aaaaddb`（RSS 订阅 / 站点地图 / 自定义 404 / OG 分享卡片）
+- 主要功能：首页（壁纸轮换 + 跟随壁纸变色）、文章、动态、相册、友链、留言、关于、**搜索**、发布后台 `/admin`、
+  **RSS 订阅 `/rss.xml`**、**站点地图 `/sitemap.xml`**、`robots.txt`、**自定义 404 页**
+- 首页资料卡的「文章 / 标签」数现在是读内容集合实时算的（以前写死在 `src/data/site.ts`，发到第 9 篇还显示 3）
 
 ## 三、常用命令
 
@@ -62,6 +64,11 @@ npx wrangler dev --remote           # 本地直连线上资源调试（注意是
 | 文章字段校验 | `src/content.config.ts` |
 | 部署配置（Worker 名、静态资源目录） | `wrangler.toml` |
 | 首页布局（三栏：左小组件 / 中文章 / 右日历） | `src/pages/index.astro` |
+| RSS 全文订阅源 | `src/pages/rss.xml.ts`（新文章自动进源，不用改） |
+| 站点地图 | `src/pages/sitemap.xml.ts`（固定页那份列表要手动维护） |
+| 爬虫规则 | `public/robots.txt` |
+| 404 页 | `src/pages/404.astro` + `wrangler.toml` 的 `not_found_handling` |
+| 分享卡片 meta（og / twitter） | `src/layouts/BaseLayout.astro`（`image` / `type` / `canonical` 三个 props） |
 
 ## 五、踩过的坑（改代码前先看这一节）
 
@@ -99,10 +106,24 @@ Lua 的字符类按字节匹配，`[^,，]` 会把全角逗号的字节也当成
 切页时不要同时开「视图过渡淡入」和「`[data-reveal]` 逐项淡入」；动效只用透明度，
 全屏 `scale` 要重采样、最容易显得僵硬。
 
+**10. 静态端点里写的响应头没用。**
+`rss.xml.ts` 里 `new Response(xml, { headers: { "Content-Type": ... } })` 在静态输出下会被
+写成文件，线上由 Cloudflare 静态资源按扩展名定类型（`.xml` → `application/xml`），自己那行作废。
+缓存策略要去 `public/_headers` 配，别在端点里写。
+
+**11. 视图过渡会拦截「非 HTML 链接」。**
+页脚指向 `/rss.xml`、`/sitemap.xml` 的链接必须加 `data-astro-reload`，否则 ClientRouter
+会把 XML 当页面抓回来往 DOM 里塞；再加 `data-astro-prefetch="false"` 免得白预取一份订阅源。
+
+**12. 404 页要显式打开。**
+Workers 静态资源默认 `not_found_handling = "none"`：建了 `dist/404.html` 也不会被用，
+用户看到的是 Cloudflare 自带白板。设成 `"404-page"` 才会返回自己的 404（状态码仍是 404）。
+
 ## 六、待办 / 已知问题
 
-- [ ] `yuki-moments` 还没有 git 仓库，建议 `git init` 并提交（其他三个都有）
-- [ ] `twikoo-cloudflare` 有 1 个未提交改动（自己的配置），确认后提交
+- [x] `yuki-moments` 已 `git init` 并提交首次快照（commit `2abb539`，.gitignore 已排除 node_modules/.wrangler/.dev.vars）
+- [x] `twikoo-cloudflare` 的配置改动已确认提交（commit `1185fee`：自定义域名 + 本站 D1）
+- [ ] 想让搜索、RSS 收录新文章时别忘了 `npm run search:index`（RSS / 站点地图是构建时自动生成的）
 - [ ] 音乐：网易云有些歌需要会员/版权，拿不到播放地址会自动跳过；把 `NETEASE_COOKIE` 存成 `yuki-music` 的 secret 可以解锁更多
 - [ ] 音频 `bgm.mp3` 39 秒却有 936KB（约 192kbps），可以压到 96–128kbps 省一半流量
 - [ ] 动态里有两张早期上传但没绑定到任何动态的「孤儿图片」，可以清理
@@ -113,6 +134,9 @@ Lua 的字符类按字节匹配，`[^,，]` 会把全角逗号的字节也当成
 
 - 网络：本机代理 `127.0.0.1:7890`（当前出口日本）。GitHub / scoop 需要它；Cloudflare API 直连可用；OpenAI API 需要代理 + 有额度的账号
 - 工具：Node（主站依赖齐全）、Lua 5.4.6（winget 装的 `DEVCOM.Lua`，**新终端才有 PATH**）、wrangler（在 `yuki-theme` 和 `yuki-moments` 的 devDependencies 里）
+- 截图验证：本机已缓存 Playwright 的 Chromium（`C:\Users\ROG\AppData\Local\ms-playwright\chromium-1208\chrome-win64\chrome.exe`）。
+  任意可写目录里 `npm install playwright-core`（走 7890 代理），再 `chromium.launch({ executablePath })` 就能截图，
+  **不用重新下浏览器**。本轮的截图证据在 `C:\Users\ROG\.codex\visualizations\2026\09\24\01a0d3b5-8e2d-7960-9f72-c5d2747e2c5d`。
 - 密钥：动态发布密码、网易云 Cookie 都只存在 Cloudflare secret 里，**不在仓库、也不在本机**
 
 ## 八、新任务怎么开工
