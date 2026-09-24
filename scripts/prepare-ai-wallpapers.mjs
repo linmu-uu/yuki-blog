@@ -25,6 +25,21 @@ const SMALL_WIDTH = 1600;
 const MOBILE = { width: 1080, height: 1920 };
 const QUALITY = 62;
 
+/**
+ * 竖版裁切时人物应该落在哪个横向位置（0 = 最左，1 = 最右）。
+ *
+ * 默认用 sharp 的 attention 策略找重心，但实测会被霓虹灯牌、大片天空带偏：
+ * 白子那张只剩一只手、星野那张整张都是天空（人物被裁掉了）。
+ * 所以每张图手动给一个焦点，键名是 output/imagegen 里的文件名（不带扩展名）。
+ * 没列到的图仍然走自动策略。
+ */
+const FOCAL_X = {
+	"01-shiroko-neon-night": 0.46,
+	"02-yuuka-window": 0.5,
+	"03-hoshino-sunset": 0.77,
+	"04-trinity-cathedral": 0.52,
+};
+
 async function cleanup() {
 	for (const dir of [OUT_DESKTOP, OUT_MOBILE]) {
 		await mkdir(dir, { recursive: true });
@@ -71,16 +86,32 @@ for (const name of entries) {
 		.avif({ quality: QUALITY, effort: 4 })
 		.toFile(smallFile);
 
-	// 竖版：让 sharp 自己找画面重心裁切，避免把人物裁掉
-	await sharp(source)
-		.resize({
+	// 竖版：按 9:16 裁一块竖条，再缩到 1080×1920
+	const focus = FOCAL_X[name.replace(/\.png$/i, "")];
+	let mobilePipeline;
+	if (focus === undefined) {
+		// 没配焦点就走 sharp 的自动重心
+		mobilePipeline = sharp(source).resize({
 			width: MOBILE.width,
 			height: MOBILE.height,
 			fit: "cover",
 			position: sharp.strategy.attention,
-		})
-		.avif({ quality: QUALITY, effort: 4 })
-		.toFile(mobileFile);
+		});
+	} else {
+		const meta = await sharp(source).metadata();
+		const width = meta.width ?? 0;
+		const height = meta.height ?? 0;
+		const cropWidth = Math.round((height * MOBILE.width) / MOBILE.height);
+		const left = Math.min(
+			Math.max(Math.round(width * focus - cropWidth / 2), 0),
+			Math.max(width - cropWidth, 0),
+		);
+		mobilePipeline = sharp(source)
+			.extract({ left, top: 0, width: Math.min(cropWidth, width), height })
+			.resize({ width: MOBILE.width, height: MOBILE.height });
+	}
+
+	await mobilePipeline.avif({ quality: QUALITY, effort: 4 }).toFile(mobileFile);
 
 	const desktopSize = (await stat(desktopFile)).size;
 	const smallSize = (await stat(smallFile)).size;
