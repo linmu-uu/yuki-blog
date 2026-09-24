@@ -131,6 +131,13 @@ AI 图转 1080×1920 手机版时，`position: sharp.strategy.attention` 会被�
 白子那张只剩一只手、星野那张整张都是天空。`scripts/prepare-ai-wallpapers.mjs` 里的 `FOCAL_X`
 是逐张手填的焦点横向位置（0=最左，1=最右），换图后**必须自己看一眼竖版再发**。
 
+**14. secret 别用管道喂，末尾换行会变成值的一部分。**
+`Get-Clipboard | npx wrangler secret put NETEASE_COOKIE` 这种写法会把换行一起存进去，
+Worker 里 `fetch` 上游立刻抛 `TypeError: Invalid header value.`。症状很阴：`/playlist` 因为命中边缘缓存
+看着完全正常，只有 `/url` 全 500。正确做法是净化后走 `wrangler secret bulk` 传 JSON 文件，
+顺手去掉 `cookie:` 前缀、按 `;` 拆字段去重，并确认只剩 ASCII 可见字符（`^[\x20-\x7E]+$`）。
+排查手段：`npx wrangler tail yuki-music`（注意是位置参数，不是 `--name`）能看到完整异常栈。
+
 ## 六、待办 / 已知问题
 
 - [x] `yuki-moments` 已 `git init` 并提交首次快照（commit `2abb539`，.gitignore 已排除 node_modules/.wrangler/.dev.vars）
@@ -138,9 +145,9 @@ AI 图转 1080×1920 手机版时，`position: sharp.strategy.attention` 会被�
 - [x] 音频 `bgm.mp3` 已压到 102kbps（497KB，原来 936KB）
 - [x] 动态里的孤儿配图已清理（实际 3 张）
 - [ ] 加完文章记得跑 `npm run search:index`（RSS / 站点地图是构建时自动生成的，不用管）
-- [ ] 音乐 cookie **仍未配置**（`https://music.yuki666.online/` 返回 `hasCookie:false`）：实测默认歌单 10 首里只有 **4 首**能拿到播放地址，
-  其余 6 首是 `code=404 reason=1`（会员/版权限制）。钥匙是浏览器里 `music.163.com` 的 Cookie（含 `MUSIC_U=`），
-  跑 `npx wrangler secret put NETEASE_COOKIE` 存进 `yuki-music`；对照脚本在证据目录（`music-check.mjs`，跑 `node music-check.mjs after` 再统计一次）
+- [x] 音乐 cookie 已配好（2026-09-24）：默认歌单实测 **4/10 → 8/10** 能播（`hasCookie:true`）。
+  剩下两首 `FRND - Before U I Didn't Exist`、`FRND - Erase` 是 `code=404 reason=null`，网易云那边本身没版权，配 cookie 也拿不到，只能换歌
+- [ ] 网易云 cookie 会过期（几个月到一年），哪天歌又播不动了就重新抄一次；上传方式见踩坑 14
 - [x] AI 壁纸已上线（第四轮）：**没走 ComfyUI 的放大路线**，改用 imagegen 技能直接出 2560×1440 原图，
   再 `npm run wallpapers:ai` → `npm run wallpapers:palette` → 构建 → 部署，线上已验证
 - [ ] ComfyUI 那条路留作备选（模型与配方见第八节），放大模型 `4x-UltraSharp.pth` 仍未装
