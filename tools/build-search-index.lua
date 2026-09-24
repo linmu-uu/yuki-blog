@@ -31,9 +31,11 @@ local function list_markdown_files(dir)
 	end
 
 	for line in pipe:lines() do
-		line = line:gsub("%s+$", "")
-		if line ~= "" then
-			table.insert(files, dir .. "/" .. line)
+		-- Lua 5.5 起，for 的循环变量是 <const>，不能再往它身上赋值。
+		-- 所以用一个新的 local 接住处理结果（5.4 上也一样跑）。
+		local trimmed = line:gsub("%s+$", "")
+		if trimmed ~= "" then
+			table.insert(files, dir .. "/" .. trimmed)
 		end
 	end
 	pipe:close()
@@ -76,8 +78,8 @@ local function parse_tags(value)
 	-- 把「，」写进 [^,，] 会让它的每个字节都变成分隔符，中文会被切碎。
 	value = value:gsub("，", ",")
 
-	for tag in value:gmatch("[^,]+") do
-		tag = tag:gsub("^%s*%[?", ""):gsub("%]?%s*$", "")
+	for raw in value:gmatch("[^,]+") do
+		local tag = raw:gsub("^%s*%[?", ""):gsub("%]?%s*$", "")
 		if tag ~= "" then
 			table.insert(tags, tag)
 		end
@@ -112,10 +114,12 @@ local function strip_markdown(text)
 	local lines = {}
 	local in_code = false
 
-	for line in text:gmatch("[^\r\n]+") do
-		if line:match("^%s*```") then
+	for raw in text:gmatch("[^\r\n]+") do
+		if raw:match("^%s*```") then
 			in_code = not in_code -- 代码块整体跳过
 		elseif not in_code then
+			-- 循环变量是 <const>，改它要用一个新的 local 接住
+			local line = raw
 			line = line:gsub("^%s*>%s?", "")          -- 引用
 			line = line:gsub("^%s*#+%s*", "")         -- 标题
 			line = line:gsub("^%s*[%-%*%+]%s+", "")   -- 无序列表

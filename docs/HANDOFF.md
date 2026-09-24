@@ -3,7 +3,7 @@
 > 用途：这是一个长期在做的个人博客项目。**新开一个 Codex 任务时，让助手先读这份文档**，
 > 就能立刻接上进度，不用把之前几万字的对话重新搬一遍。
 >
-> 最后更新：2026-09-24（第二轮：RSS / 站点地图 / 404 / 分享卡片）
+> 最后更新：2026-09-24（第三轮：新文章《SEO 基建》+ 音频瘦身 + 动态孤儿图清理 + 本机工具链）
 
 ## 一、项目地图
 
@@ -20,13 +20,17 @@
 
 ## 二、当前状态快照（2026-09-24）
 
-- 主站：**9 篇文章**、搜索索引 41948 字；构建 **19 个页面**（多了 `404.html`）约 1.4 秒；工作区干净
-- 主站线上版本：`20e559e9-18ad-4f47-b3c0-ec1b256f244a`（Worker 名 `firefly`）
+- 主站：**10 篇文章**、搜索索引 48765 字；构建 **20 个页面**约 1.5 秒；工作区干净
+- 主站线上版本：`6735adb9-567e-4bfa-9cb6-62371ff65941`（Worker 名 `firefly`）
 - 音乐接口线上版本：`b5196ea7-5a41-4b10-b5a3-10f1070a7e39`
-- 最近提交：`aaaaddb`（RSS 订阅 / 站点地图 / 自定义 404 / OG 分享卡片）
+- 最近提交：见 `git log`（本轮：新文章 + 音频压缩 + Lua 5.5 兼容修复）
 - 主要功能：首页（壁纸轮换 + 跟随壁纸变色）、文章、动态、相册、友链、留言、关于、**搜索**、发布后台 `/admin`、
   **RSS 订阅 `/rss.xml`**、**站点地图 `/sitemap.xml`**、`robots.txt`、**自定义 404 页**
 - 首页资料卡的「文章 / 标签」数现在是读内容集合实时算的（以前写死在 `src/data/site.ts`，发到第 9 篇还显示 3）
+- `bgm.mp3` 已重压：原来是 **WAV 容器里包着 192kbps MP3**（扩展名与内容不符），现在是真正的 MP3 / 102kbps，
+  936,680 → 497,108 字节（-47%），时长 39.02s 不变；原文件在 git 历史里，`git show 54ae552:public/audio/bgm.mp3` 可还原
+- 动态 D1 里 3 张孤儿配图（id 3/4/6，HANDOFF 之前记成 2 张）已删除并备份到本会话证据目录，
+  数据库从 339,968 字节缩到 28,672 字节
 
 ## 三、常用命令
 
@@ -123,17 +127,22 @@ Workers 静态资源默认 `not_found_handling = "none"`：建了 `dist/404.html
 
 - [x] `yuki-moments` 已 `git init` 并提交首次快照（commit `2abb539`，.gitignore 已排除 node_modules/.wrangler/.dev.vars）
 - [x] `twikoo-cloudflare` 的配置改动已确认提交（commit `1185fee`：自定义域名 + 本站 D1）
-- [ ] 想让搜索、RSS 收录新文章时别忘了 `npm run search:index`（RSS / 站点地图是构建时自动生成的）
+- [x] 音频 `bgm.mp3` 已压到 102kbps（497KB，原来 936KB）
+- [x] 动态里的孤儿配图已清理（实际 3 张）
+- [ ] 加完文章记得跑 `npm run search:index`（RSS / 站点地图是构建时自动生成的，不用管）
 - [ ] 音乐：网易云有些歌需要会员/版权，拿不到播放地址会自动跳过；把 `NETEASE_COOKIE` 存成 `yuki-music` 的 secret 可以解锁更多
-- [ ] 音频 `bgm.mp3` 39 秒却有 936KB（约 192kbps），可以压到 96–128kbps 省一半流量
-- [ ] 动态里有两张早期上传但没绑定到任何动态的「孤儿图片」，可以清理
 - [ ] 想继续做 AI 壁纸：需要 OpenAI 账号有额度（目前没有）；代理出口要在受支持地区（香港节点会被拒）；本地绘画方案 ComfyUI 便携包已下好放在 `D:\ComfyUI-dl\ComfyUI_windows_portable_nvidia.7z`（1.8GB），还没解压安装
 - [ ] 国内访问的根本瓶颈是 Cloudflare 没有国内节点（要域名备案才能用国内 CDN），暂未处理
 
 ## 七、环境事实
 
 - 网络：本机代理 `127.0.0.1:7890`（当前出口日本）。GitHub / scoop 需要它；Cloudflare API 直连可用；OpenAI API 需要代理 + 有额度的账号
-- 工具：Node（主站依赖齐全）、Lua 5.4.6（winget 装的 `DEVCOM.Lua`，**新终端才有 PATH**）、wrangler（在 `yuki-theme` 和 `yuki-moments` 的 devDependencies 里）
+- 工具（现在都在 PATH 上，scoop shims）：
+  - Node（主站依赖齐全）、wrangler（在 `yuki-theme` / `yuki-moments` 的 devDependencies 里）
+  - **Lua 5.5.0**（`scoop install lua`；之前 winget 那个 5.4.6 已经不在机器上了）
+  - **ffmpeg / ffprobe 9.0.2**（`scoop install ffmpeg`，压音频用）
+  - 7-Zip 26.00（`7z`，解压用）
+  - 注意：`scoop bucket add main` 是这轮才加的，之前 scoop 只有 7zip/mingw 两个 app、没有 bucket
 - 截图验证：本机已缓存 Playwright 的 Chromium（`C:\Users\ROG\AppData\Local\ms-playwright\chromium-1208\chrome-win64\chrome.exe`）。
   任意可写目录里 `npm install playwright-core`（走 7890 代理），再 `chromium.launch({ executablePath })` 就能截图，
   **不用重新下浏览器**。本轮的截图证据在 `C:\Users\ROG\.codex\visualizations\2026\09\24\01a0d3b5-8e2d-7960-9f72-c5d2747e2c5d`。

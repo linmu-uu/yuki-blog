@@ -1,16 +1,16 @@
 {
-  "generatedAt": "2026-09-22T15:03:36Z",
-  "count": 9,
+  "generatedAt": "2026-09-24T14:21:54Z",
+  "count": 10,
   "posts": [
     {
-      "title": "一个「纯静态」博客背后的五个 Worker",
-      "url": "/posts/cloudflare-workers-architecture/",
-      "date": "2026-09-22",
+      "title": "给博客补上 RSS、站点地图和 404：静态站点的 SEO 基建",
+      "url": "/posts/seo-basics/",
+      "date": "2026-09-24",
       "category": "建站笔记",
-      "description": "主站是静态资源，但动态、评论、相册图、音乐歌单、搜索索引各有各的去处。这篇讲这套 Cloudflare Workers 架构怎么搭起来、前端怎么把它们串起来，以及三个真实踩过的坑。",
-      "tags": ["Cloudflare", "架构", "建站"],
-      "chars": 9064,
-      "text": "这个博客对外说是「静态站点」：没有数据库驱动的页面，没有常驻服务器，npm run deploy 一推就上线。 但实际上，它背后跑着五个 Cloudflare Worker。这篇就把这套架构摊开讲讲——为什么这么拆、 前端怎么把它们串起来、以及踩过哪些坑。 全景图   Worker   域名   干什么   数据放哪     ---   ---   ---   ---     firefly   yuki666.online   托管整个静态站点   无（纯静态资源）     yuki-moments   moments.yuki666.online   动态的增删查、配图上传与读取   D1     twikoo-cloudflare   twikoo.yuki666.online   评论系统后端   D1     yuki-music   music.yuki666.online   代理网易云歌单与播放地址   无（边缘缓存）     本地 Lua 工具   —   生成站内搜索索引   产物提交进仓库   为什么拆成这么多个而不是一个？三个理由： 炸一个不连坐：评论后端出问题，动态和站点照常 各自独立部署：改动态不用动主站，改主站不用重发评论 权限边界清楚：只有动态和评论两个 Worker 碰数据库，主站连数据库绑定都没有 代价是多几个域名、多几次 TLS 握手——这个后面单独说怎么缓解。 一、主站：assets-only Worker 主站是\"纯静态\"，所以它的 Worker 里没有一行业务代码，只有一份配置： [assets] 是 Workers 的静态资源托管：把 dist/ 目录整个交给它，请求进来直接命中边缘缓存， 不经过任何脚本。特点： 部署就是上传文件：astro build 产出什么，线上就是什么 public/headers 生效：缓存策略写在文件里，跟着代码走 不消耗 Worker 请求额度（静态资源是单独的计费项） 配置里 Worker 名字还叫 firefly，因为 yuki666.online 这个自定义域名最早绑在它上面。 换名字等于新建一个 Worker，还要去后台把域名搬过去——收益不大，就一直没动。 缓存策略：静态站点的命门 public/headers 里定了两"
+      "description": "分享链接没有预览图、别人订阅不了、搜索引擎不知道该收哪些页、输错地址只看到 Cloudflare 的白板。这篇把静态站点最容易被跳过的那几件小事一次补齐，附三处真实踩坑。",
+      "tags": ["建站", "SEO", "Astro"],
+      "chars": 6817,
+      "text": "这个博客从主题到搜索都自己做，功能上看着挺全，但一直缺几样没人会主动想起来的东西： 把文章链接发到群里，只有一条光秃秃的 URL，没有标题也没有预览图； 想订阅的人找不到订阅入口； 爬虫拿到首页，但不知道站里到底有哪些页面； 地址打错一个字母，看到的是 Cloudflare 自带的白板 404。 这些加起来就是所谓的「SEO 基建」。它不影响你自己访问，但影响别人能不能找到、愿不愿意点。 这篇把这几件事一次补齐，代码都在仓库里，顺手记下三处踩坑。 这一轮加了什么   文件   作用   谁在用     ---   ---   ---     /rss.xml   全文订阅源   阅读器、订阅党     /sitemap.xml   页面清单   搜索引擎爬虫     /robots.txt   抓取规则   同上     og: / twitter: meta   分享卡片   QQ、微信、Discord 的链接预览     canonical   规范地址   搜索引擎去重     自定义 404 页   走丢时的引导   手滑的访客   一、RSS：能全文就别只给摘要 自己搭静态站的第一个坑就是想太多：要不要上 @astrojs/rss？ 结论是不用。那个包要额外装依赖，而这里需要的东西其实很少：把文章列表拼成一份 RSS 2.0 XML。Astro 的静态端点（src/pages/x.xml.ts）本身就是个导出 GET 的模块： 文章列表从内容集合里取，所以以后写新文章不用回来改这个文件——这也是 「能算出来的就别手写」的第一条。 全文输出：把 Markdown 渲染成 HTML 塞进 CDATA RSS 的 <description> 只放摘要的话，读者点进去还是得回站内。全文输出体验好得多， 而渲染正文需要一个能在构建期跑组件的容器（astro/container）： 两个必须处理的小问题： 1. ]]> 会把 CDATA 区块提前关掉。 XML 里 ]]> 就是 CDATA 的结束标记， 正文里真的出现这三个字符就会把文档搞坏，所以要拆成两段： 2. 站内链接要变成绝对�"
     },
     {
       "title": "Lua 在正经工程里的用法：OpenResty、Redis 脚本、Neovim",
@@ -41,6 +41,16 @@
       "tags": ["Lua", "建站", "工程实践"],
       "chars": 6756,
       "text": "博客上线到现在，一直缺个东西：搜索。 站内文章慢慢多起来以后，想找之前写过的东西只能靠翻归档。接一个搜索服务吧，为了六篇文章不值当； 上 Algolia、Meilisearch 之类又要多一个服务、多一份维护。 最后决定：自己写个小工具，把文章压成一份 JSON 索引，前端拿它做纯静态搜索。 而用来写这个工具的语言，正好是前面几篇的主角——Lua。 为什么是 Lua 这个任务的需求很朴素：读一堆文件、切字符串、拼 JSON、写文件。 放在 Lua 里，它大概七十行；放在别的语言里也能写，只是 Lua 有两个额外好处： 前面三篇刚聊完，正好练手；Lua 的 gsub + 模式匹配处理文本特别顺手 它本来就是「宿主负责 IO，Lua 负责编排」的定位，这个工具就是标准的胶水脚本 当然也有短板，而且马上就遇到了： Lua 标准库没有列目录、没有 JSON。前者得借 shell，后者只能手写（顺便把 JSON 转义规则学明白）。 第 0 步：装一个 Lua Windows 上最省事的是 winget： 装完记得重开终端（PATH 是安装时写进环境变量的，老终端读不到），然后： 如果你用 scoop，scoop install lua 也一样——不过 scoop 要拉 GitHub 的 bucket， 网络不通的话还是 winget 稳一点。 工具要做四件事 列出所有文章 —— src/content/posts/.md 解析 front-matter —— 拿标题、日期、标签、简介 把 Markdown 洗成纯文本 —— 搜索不需要代码块和语法符号 输出 JSON —— 给前端用的索引 下面按顺序说，代码在 tools/build-search-index.lua。 一、列目录：标准库不给，就借 shell io.popen 会开一个子进程执行命令，然后你可以像读文件一样读它的输出。 两行里需要注意的： package.config:sub(1, 1) 就是路径分隔符，Windows 上是 \\、其它平台是 /，常用来做平台分支 ls 后面加了 2>/dev/null，目录不存�"
+    },
+    {
+      "title": "一个「纯静态」博客背后的五个 Worker",
+      "url": "/posts/cloudflare-workers-architecture/",
+      "date": "2026-09-22",
+      "category": "建站笔记",
+      "description": "主站是静态资源，但动态、评论、相册图、音乐歌单、搜索索引各有各的去处。这篇讲这套 Cloudflare Workers 架构怎么搭起来、前端怎么把它们串起来，以及三个真实踩过的坑。",
+      "tags": ["Cloudflare", "架构", "建站"],
+      "chars": 9064,
+      "text": "这个博客对外说是「静态站点」：没有数据库驱动的页面，没有常驻服务器，npm run deploy 一推就上线。 但实际上，它背后跑着五个 Cloudflare Worker。这篇就把这套架构摊开讲讲——为什么这么拆、 前端怎么把它们串起来、以及踩过哪些坑。 全景图   Worker   域名   干什么   数据放哪     ---   ---   ---   ---     firefly   yuki666.online   托管整个静态站点   无（纯静态资源）     yuki-moments   moments.yuki666.online   动态的增删查、配图上传与读取   D1     twikoo-cloudflare   twikoo.yuki666.online   评论系统后端   D1     yuki-music   music.yuki666.online   代理网易云歌单与播放地址   无（边缘缓存）     本地 Lua 工具   —   生成站内搜索索引   产物提交进仓库   为什么拆成这么多个而不是一个？三个理由： 炸一个不连坐：评论后端出问题，动态和站点照常 各自独立部署：改动态不用动主站，改主站不用重发评论 权限边界清楚：只有动态和评论两个 Worker 碰数据库，主站连数据库绑定都没有 代价是多几个域名、多几次 TLS 握手——这个后面单独说怎么缓解。 一、主站：assets-only Worker 主站是\"纯静态\"，所以它的 Worker 里没有一行业务代码，只有一份配置： [assets] 是 Workers 的静态资源托管：把 dist/ 目录整个交给它，请求进来直接命中边缘缓存， 不经过任何脚本。特点： 部署就是上传文件：astro build 产出什么，线上就是什么 public/headers 生效：缓存策略写在文件里，跟着代码走 不消耗 Worker 请求额度（静态资源是单独的计费项） 配置里 Worker 名字还叫 firefly，因为 yuki666.online 这个自定义域名最早绑在它上面。 换名字等于新建一个 Worker，还要去后台把域名搬过去——收益不大，就一直没动。 缓存策略：静态站点的命门 public/headers 里定了两"
     },
     {
       "title": "游戏里官方支持的 Lua：Garry's Mod、Roblox、FiveM 模组入门",
