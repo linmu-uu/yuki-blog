@@ -245,6 +245,19 @@ const { marks = [], stats } = Astro.props;
 		href: string;
 	}
 
+		/**
+	 * Astro 的 scoped 样式靠 `data-astro-cid-*` 属性匹配元素。
+	 * 日期格子是 JS 动态创建的，天生没有这个属性——不补的话 `.calendar__day`
+	 * 那一整组样式（包括「有文章的日子带小点」）会全部失效。
+	 */
+	const applyScope = (node: HTMLElement) => {
+		const attribute = Array.from(node.attributes)
+			.map((item) => item.name)
+			.find((name) => name.startsWith("data-astro-cid-"));
+		if (!attribute) return;
+		node.querySelectorAll("*").forEach((element) => element.setAttribute(attribute, ""));
+	};
+
 	const setupCalendar = () => {
 		const root = document.querySelector<HTMLElement>("[data-calendar]");
 		if (!root) return;
@@ -324,12 +337,14 @@ const { marks = [], stats } = Astro.props;
 
 			if (!animate) {
 				grid.replaceChildren(...cells);
+				applyScope(grid);
 				return;
 			}
 
 			grid.classList.add("is-switching");
 			window.setTimeout(() => {
 				grid.replaceChildren(...cells);
+				applyScope(grid);
 				grid.classList.remove("is-switching");
 			}, 180);
 		};
