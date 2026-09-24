@@ -21,8 +21,8 @@
 ## 二、当前状态快照（2026-09-24）
 
 - 主站：**11 篇文章**、搜索索引 54634 字；构建 **21 个页面**约 1.5 秒；工作区干净
-- 主站线上版本：`de9e7ba0-08f5-480b-b7e0-e9573f630670`（Worker 名 `firefly`；第四轮部署两次：先上壁纸，后上新文章）
-- 壁纸轮换：`ba-*` 10 张 + **`ai-*` 4 张**（白子雨夜 / 优香教室 / 星野黄昏 / 三一教堂），桌面 2560 与 1600 两档、手机 1080×1920
+- 主站线上版本：`387fdfff-eb77-43b4-92dc-a4cba5607083`（Worker 名 `firefly`；第四轮部署三次：壁纸 → 新文章 → 日历小点修复 + 壁纸锐化）
+- 壁纸轮换：`ba-*` 10 张 + **`ai-*` 4 张**（白子雨夜 / 优香教室 / 星野黄昏 / 三一教堂），桌面 2560 与 1600 两档、手机 1080×1920；转码前统一过一遍轻度 unsharp（见第八节补充）
 - 线上抽查：真机 Chromium 开首页 12 次，命中 `ai-desktop-03/04` 共 3 次，主题色随壁纸变化正常
 - 音乐接口线上版本：`b5196ea7-5a41-4b10-b5a3-10f1070a7e39`
 - 最近提交：见 `git log`（本轮：新文章 + 音频压缩 + Lua 5.5 兼容修复）
@@ -138,6 +138,18 @@ Worker 里 `fetch` 上游立刻抛 `TypeError: Invalid header value.`。症状�
 顺手去掉 `cookie:` 前缀、按 `;` 拆字段去重，并确认只剩 ASCII 可见字符（`^[\x20-\x7E]+$`）。
 排查手段：`npx wrangler tail yuki-music`（注意是位置参数，不是 `--name`）能看到完整异常栈。
 
+**15. Astro 的 scoped 样式只认模板里的节点，JS 建的节点全都没有属性。**
+首页日历的日期格子是 `document.createElement` 出来的，天生没有 `data-astro-cid-*`，
+于是 `.calendar__day` 那一整组样式失效——症状很迷惑：格子照样排成 7 列（父级 `.calendar__grid` 有属性），
+但「有文章的小点」、高亮底色、今天的高亮胶囊全都不见了，而提示文字还写着「有文章的日子带小点」。
+第 4 条讲的是 `innerHTML`，这条是 `createElement`，本质一样：**每次重绘后都要补属性**
+（`CalendarCard.astro` 里的 `applyScope()`；`moments.astro` 早就有同款）。
+排查办法：浏览器里看 `.calendar__day` 有没有 `data-astro-cid-*`，以及 `getComputedStyle(cell, '::after').content`。
+
+**16. 刚部署完的头几秒，新资源可能仍然 404。**
+新旧版本切换 + 边缘缓存，实测两次部署后立刻查新图都是 404，隔几秒后带上随机参数（`?cb=123`）再查就 200、字节数和本地一致。
+所以部署后的验证**别只看第一眼**，等几秒带随机参数复测一次再下结论。
+
 ## 六、待办 / 已知问题
 
 - [x] `yuki-moments` 已 `git init` 并提交首次快照（commit `2abb539`，.gitignore 已排除 node_modules/.wrangler/.dev.vars）
@@ -151,6 +163,8 @@ Worker 里 `fetch` 上游立刻抛 `TypeError: Invalid header value.`。症状�
 - [x] AI 壁纸已上线（第四轮）：**没走 ComfyUI 的放大路线**，改用 imagegen 技能直接出 2560×1440 原图，
   再 `npm run wallpapers:ai` → `npm run wallpapers:palette` → 构建 → 部署，线上已验证
 - [ ] ComfyUI 那条路留作备选（模型与配方见第八节），放大模型 `4x-UltraSharp.pth` 仍未装
+- [ ] 老壁纸里几张原生宽度不到 2560（`ba-desktop-01` 只有 1920、`ba-desktop-06` 是 2000），
+  在 2560 宽的屏上首屏大图会被 `object-fit: cover` 拉伸变糊；有空重导或换掉
 - [ ] OpenAI 那条 AI 画图的路依然不通：需要账号有额度（目前没有），且代理出口要在受支持地区（香港节点会被拒）
 - [ ] 国内访问的根本瓶颈是 Cloudflare 没有国内节点（要域名备案才能用国内 CDN），暂未处理
 
@@ -258,6 +272,13 @@ blue archive, <角色名> (blue archive), 1girl, solo, cowboy shot, <发色/瞳�
 第四轮改用了 imagegen 技能直接生成 **2560 宽**原图（三张 2560×1707、一张 2560×1440：`output/imagegen/01-shiroko-neon-night.png`、
 `02-yuuka-window.png`、`03-hoshino-sunset.png`、`04-trinity-cathedral.png`，`output/` 已 gitignore），
 再用 `npm run wallpapers:ai` 转成三种规格。好处是不用纠结放大模型；ComfyUI 仍可用于批量换风格。
+
+**补充（同一轮后半段）：AI 图偏「磨皮」，直出 1:1 看着有点糊。** 实测编码不是问题
+（同区域 1:1 对比：原 PNG 88.85 / 桌面 AVIF 88.67 / 1600 拉到 2560 是 88.14，拉普拉斯标准差），
+所以改在转码前加一遍轻度 unsharp：`SHARPEN = { sigma: 0.8, m1: 0.6, m2: 2, x1: 2, y2: 10, y3: 20 }`。
+体积 2560 宽 179KB → 210KB（+17%），肉眼可见更实；quality 提到 72 涨 56% 却没什么收益，不值得。
+**别把 sigma 上到 1.2**，头发边缘会出现白边。另外首屏大图的入场动画原本停在 `scale(1.02)`，
+等于整张 2560 图被永久重采样一次，已改成停在 `scale(1)`。
 
 ## 九、新任务怎么开工
 
