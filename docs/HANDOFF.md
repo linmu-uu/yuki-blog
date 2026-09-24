@@ -131,7 +131,9 @@ Workers 静态资源默认 `not_found_handling = "none"`：建了 `dist/404.html
 - [x] 动态里的孤儿配图已清理（实际 3 张）
 - [ ] 加完文章记得跑 `npm run search:index`（RSS / 站点地图是构建时自动生成的，不用管）
 - [ ] 音乐：网易云有些歌需要会员/版权，拿不到播放地址会自动跳过；把 `NETEASE_COOKIE` 存成 `yuki-music` 的 secret 可以解锁更多
-- [ ] AI 壁纸：**ComfyUI 已装好、能出图**（详见第八节），下一步是补放大模型 → `wallpapers:import` → `wallpapers:palette` / `wallpapers:variants` → 部署
+- [ ] AI 壁纸：**ComfyUI 已装好、能出图，角色配方也定型了**（详见第八节），已经挑出 4 张角色图 + 1 张三一风景；
+  下一步是补放大模型（`4x-UltraSharp.pth`，约 64MB）把 1216×832 放大到 2432×1664 →
+  `wallpapers:import` → `wallpapers:palette` / `wallpapers:variants` → 部署
 - [ ] OpenAI 那条 AI 画图的路依然不通：需要账号有额度（目前没有），且代理出口要在受支持地区（香港节点会被拒）
 - [ ] 国内访问的根本瓶颈是 Cloudflare 没有国内节点（要域名备案才能用国内 CDN），暂未处理
 
@@ -176,12 +178,39 @@ D:\ComfyUI_windows_portable\python_embeded\python.exe -s D:\ComfyUI_windows_port
 
 实测速度（1216×832、28–30 步、cfg 6、`euler_ancestral`）：**首张约 35s（含加载模型），之后每张 16–18s**。
 
-### 坑：prompt 里写 `blue archive` 会画出商标
+### 坑一：`official art` + `blue archive` 会画出商标
 
-模型训练数据里的官方图带 logo，所以正文只要出现 `blue archive` 这个标签，
-成图上就会出现「Blue Archive」商标和一行版权字。负向里加
-`logo, copyright name, artist name, text` 也压不太住，**最有效的做法是正文根本别写这个标签**，
-改用 `official art, anime screencap, very awa` 这类描述来定性风格。
+模型训练数据里的官方图带 logo。第一轮 prompt 用了 `blue archive` 加 `official art`，
+三张成图的角落全出现了「Blue Archive」商标和一行版权字；
+负向里写 `logo, copyright name, text` 也压不住（权重 `(logo:1.5)` 效果有限）。
+
+**最终可行的配方**：
+
+- 正面**保留** `blue archive` + 角色名标签（`shiroko (blue archive)`、`yuuka (blue archive)`、
+  `hoshino (blue archive)`、`alice (blue archive)` 等），这样人物才像本人
+- 正面**去掉 `official art`**（它就是往官方宣传图方向拽的那个词），
+  改用 `very awa, newest, absurdres, masterpiece`
+- 偶尔角落还会漏一行小字 → 直接裁掉 2.5% 边缘（`crop=iw*0.975:ih*0.955`），
+  反正后面导入还要放大，不差这点像素
+
+### 坑二：不加景别就会变成「大场景小人」
+
+prompt 里只写场景（`kivotos city street`、`futuristic hall`）时，模型倾向把人物画得很小，
+成图更像风景照。想让人物当主体就明确写 `cowboy shot`（或 `upper body`）+ `looking at viewer`。
+
+### 出图用的 prompt 骨架
+
+```
+masterpiece, high score, great score, absurdres, very awa, newest, anime wallpaper,
+blue archive, <角色名> (blue archive), 1girl, solo, cowboy shot, <发色/瞳色/光环>,
+<服装>, <动作>, <场景>, looking at viewer, cinematic lighting, detailed background
+
+负向: (logo:1.5), (copyright name:1.5), (artist name:1.4), (english text:1.4),
+      (watermark:1.4), (signature:1.4), worst quality, low quality, bad anatomy,
+      extra digits, fewer digits, jpeg artifacts, blurry, nsfw
+```
+
+参数：`animagine-xl-4.0.safetensors`、1216×832、30 步、cfg 6、`euler_ancestral`、seed 自定。
 
 ### 还没做
 
@@ -190,14 +219,21 @@ D:\ComfyUI_windows_portable\python_embeded\python.exe -s D:\ComfyUI_windows_port
 要真正上岗得先补个放大模型（例如 `4x-UltraSharp.pth`，约 64MB），
 先放大到 2432×1664 左右再导入，然后照常跑 `wallpapers:palette` / `wallpapers:variants`。
 
-### 本轮生成的图
+### 生成记录（都在证据目录，脚本同名对照）
 
-| 文件（证据目录） | 内容 |
-| --- | --- |
-| `ai-a-night-city.png` / `ai-b-day-sky.png` / `ai-c-holo-scape.png` | 第一轮，画质好但带 BA 商标 |
-| `ai2-d-night-girl.png` | 雨夜霓虹街道 + 白发少女，构图居中，最适合做壁纸 |
-| `ai2-e-rooftop-day.png` | 白昼云海天台 |
-| `ai2-f-holo-hall.png` | 无人物的科幻走廊 |
+| 文件 | 内容 | 结论 |
+| --- | --- | --- |
+| `ai-*.png` | 第一轮：雨夜城市 / 云海天台 / 科幻场景 | 画质好，但**带 BA 商标**，弃用 |
+| `ai2-*.png` | 第二轮：去掉 `blue archive` 标签 | 干净但「像 BA」只是风格像，不是角色 |
+| `ai3-g-shiroko-night.png` | **砂狼白子**：雨夜霓虹街道、狼耳、蓝围巾 | ✅ 像本人、无商标 |
+| `ai3-j-trinity-scenery.png` | **三一综合学园**：哥特教堂 + 樱花、无人风景 | ✅ 好风景 |
+| `ai3-h/i-*.png` | 优香 / 爱丽丝（远景色） | 人物太小，被第四轮取代 |
+| `ai4-k-yuuka-desk.png` | **早濑优香**：教室窗前抱臂，黑色环状光环 | ✅ 最像本人 |
+| `ai4-l-alice-hall-clean.png` | **天童爱丽丝**：白色长廊走向镜头 | ✅ 已裁边去小字 |
+| `ai4-m-hoshino-sunset-clean.png` | **小鸟游星野**：黄昏沙漠废墟 + 大狙 | ✅ 已裁边去小字 |
+
+脚本：`comfy-generate.js`（第一轮）、`comfy-round2.js`、`comfy-round3.js`（角色 + 风景）、
+`comfy-round4.js`（人物拉近）。想复现直接 `node comfy-round4.js`（服务得先起）。
 
 ## 九、新任务怎么开工
 
