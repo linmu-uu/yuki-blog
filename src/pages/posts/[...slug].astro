@@ -27,6 +27,8 @@ const publishedLabel = new Intl.DateTimeFormat("zh-CN", {
 <BaseLayout
 	title={post.data.title}
 	description={post.data.description}
+	type="article"
+	image={post.data.image || site.avatar}
 	preconnect={[site.twikooApi]}
 >
 	<article class="post">

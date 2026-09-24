@@ -7,6 +7,10 @@ compatibility_date = "2026-09-20"
 
 [assets]
 directory = "./dist"
+# 找不到的路径交给 dist/404.html（由 src/pages/404.astro 构建出来），
+# 这样 404 也是站点自己的样式；状态码仍然是 404（不会伪装成 200）。
+# 默认值 "none" 会返回 Cloudflare 自带的白板页面。
+not_found_handling = "404-page"
 
 [vars]
 NODE_VERSION = "22"

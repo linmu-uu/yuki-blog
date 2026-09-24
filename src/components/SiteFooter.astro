@@ -8,6 +8,10 @@ const year = new Date().getFullYear();
 	<div class="shell site-footer__inner">
 		<p class="site-footer__copy">© {year} {site.title} · 用 Astro 一点点搭起来的小窝</p>
 		<div class="site-footer__links">
+			{/* RSS 和站点地图不是 HTML 页面：data-astro-reload 让浏览器自己打开，
+			   跳过视图过渡的客户端路由（它会拿 XML 去替换 DOM） */}
+			<a href="/rss.xml" title="全文 RSS 订阅" data-astro-reload data-astro-prefetch="false">RSS</a>
+			<a href="/sitemap.xml" data-astro-reload data-astro-prefetch="false">站点地图</a>
 			<a href="/about">关于</a>
 			<a href="/friends">友链</a>
 			<a href="/guestbook">留言</a>

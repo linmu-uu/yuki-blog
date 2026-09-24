@@ -19,15 +19,26 @@ interface Props {
 	description?: string;
 	/** 这一页马上要请求的第三方/子域接口地址，提前建连能省一个来回 */
 	preconnect?: string[];
+	/** 分享卡片用的图（og:image），默认用头像；传站点内的绝对路径即可 */
+	image?: string;
+	/** og:type，文章页传 "article" */
+	type?: string;
+	/** 规范链接。传 false 表示这一页不要 canonical（比如 404 页） */
+	canonical?: string | false;
 }
 
 const {
 	title = `${site.title} - ${site.subtitle}`,
 	description = site.description,
 	preconnect = [],
+	image = site.avatar,
+	type = "website",
+	canonical = new URL(Astro.url.pathname, site.url).href,
 } = Astro.props;
 
 const preconnectOrigins = [...new Set(preconnect.filter(Boolean))];
+/* 分享卡片必须用绝对地址，相对路径在别人那个客户端里是打不开的 */
+const shareImage = new URL(image, site.url).href;
 
 // 智能主题：根据随机挑中的壁纸生成配色变量
 const wallpaper = background.mode === "image" ? pickWallpaper() : null;
@@ -56,6 +67,29 @@ const themeCss = [
 		<meta name="generator" content={Astro.generator} />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+		{/* 订阅：RSS 全文输出（src/pages/rss.xml.ts 生成） */}
+		<link
+			rel="alternate"
+			type="application/rss+xml"
+			title={`${site.title} - ${site.subtitle}`}
+			href="/rss.xml"
+		/>
+		{/*
+		 * 分享卡片（Open Graph / Twitter）。QQ、微信、Discord 这些地方贴链接时靠它出标题和图，
+		 * 之前没有这几行，贴出去只有一条光秃秃的 URL。
+		 */}
+		{canonical && <link rel="canonical" href={canonical} />}
+		<meta property="og:site_name" content={site.title} />
+		<meta property="og:type" content={type} />
+		<meta property="og:locale" content="zh_CN" />
+		<meta property="og:title" content={title} />
+		<meta property="og:description" content={description} />
+		{canonical && <meta property="og:url" content={canonical} />}
+		<meta property="og:image" content={shareImage} />
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:title" content={title} />
+		<meta name="twitter:description" content={description} />
+		<meta name="twitter:image" content={shareImage} />
 		{preconnectOrigins.map((origin) => <link rel="preconnect" href={origin} crossorigin />)}
 		{/* 构建时先烘焙一套配色，禁用 JS 时也能看；下面的脚本会按这次随机到的壁纸覆盖它 */}
 		<style id="wallpaper-theme" is:inline set:html={themeCss}></style>

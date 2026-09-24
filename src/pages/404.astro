@@ -1,0 +1,126 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const links = [
+	{ label: "回到首页", href: "/", hint: "从壁纸开始重新逛" },
+	{ label: "翻翻文章", href: "/archive/", hint: "按年份列出全部文章" },
+	{ label: "站内搜索", href: "/search/", hint: "直接搜关键词" },
+	{ label: "留个言", href: "/guestbook/", hint: "告诉主人在找什么" },
+];
+---
+
+{/* 这一页由 Cloudflare Workers 的 not_found_handling = "404-page" 提供（见 wrangler.toml） */}
+<BaseLayout
+	title="页面走丢了 - Yuki的小窝"
+	description="这个地址没有对应的页面，可以回到首页或者翻翻文章列表。"
+	canonical={false}
+>
+	<main class="shell lost">
+		<div class="lost__inner" data-reveal>
+			<p class="lost__code">404</p>
+			<h1 class="lost__title">这里没有页面喵</h1>
+			<p class="lost__desc">
+				地址可能打错了，或者这一页已经被移走。别急，上面导航栏和下面的入口都能带你回去。
+			</p>
+			<ul class="lost__links">
+				{
+					links.map((link) => (
+						<li>
+							<a class="lost__link" href={link.href}>
+								<span class="lost__link-label">{link.label}</span>
+								<span class="lost__link-hint">{link.hint}</span>
+							</a>
+						</li>
+					))
+				}
+			</ul>
+		</div>
+	</main>
+</BaseLayout>
+
+<style>
+	.lost {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		min-height: calc(100vh - var(--header-height) - 220px);
+		padding-block: var(--space-8);
+	}
+
+	.lost__inner {
+		/* 不加 width 的话，flex 容器里的自适应宽度会让下面那排卡片挤成一列 */
+		width: 100%;
+		max-width: 620px;
+		text-align: center;
+	}
+
+	.lost__code {
+		margin: 0;
+		font-family: var(--font-display);
+		font-size: clamp(4.5rem, 16vw, 8rem);
+		font-weight: 800;
+		line-height: 1;
+		letter-spacing: 0.06em;
+		background: var(--gradient-spectrum);
+		-webkit-background-clip: text;
+		background-clip: text;
+		color: transparent;
+		filter: drop-shadow(0 16px 40px rgba(var(--accent-rgb), 0.25));
+	}
+
+	.lost__title {
+		margin: var(--space-3) 0 0;
+		font-family: var(--font-display);
+		font-size: clamp(1.4rem, 3vw, 1.9rem);
+		color: var(--text);
+	}
+
+	.lost__desc {
+		margin: var(--space-3) auto 0;
+		max-width: 46ch;
+		font-size: var(--text-sm);
+		line-height: 1.9;
+		color: var(--text-muted);
+	}
+
+	.lost__links {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+		gap: var(--space-3);
+		margin: var(--space-6) 0 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.lost__link {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		padding: var(--space-4);
+		border: 1px solid var(--border);
+		border-radius: var(--radius);
+		background: var(--surface);
+		box-shadow: var(--shadow-card), var(--inner-highlight);
+		text-align: left;
+		transition:
+			border-color var(--dur) var(--ease-soft),
+			background var(--dur) var(--ease-soft),
+			transform var(--dur) var(--ease-out);
+	}
+
+	.lost__link:hover {
+		border-color: var(--border-strong);
+		background: var(--surface-hover);
+		transform: translateY(-2px);
+	}
+
+	.lost__link-label {
+		font-size: var(--text-base);
+		color: var(--text);
+	}
+
+	.lost__link-hint {
+		font-size: var(--text-xs);
+		color: var(--text-dim);
+	}
+</style>

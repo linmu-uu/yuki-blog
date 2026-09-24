@@ -47,6 +47,17 @@
 /search-index.json
   Cache-Control: public, max-age=300
 
+# 订阅源与站点地图：跟着文章更新走，缓存 5 分钟
+/rss.xml
+  Cache-Control: public, max-age=300
+
+/sitemap.xml
+  Cache-Control: public, max-age=300
+
+# 爬虫规则：改的频率极低，缓存一天
+/robots.txt
+  Cache-Control: public, max-age=86400
+
 /apple-touch-icon.png
   Cache-Control: public, max-age=604800
 
@@ -80,4 +91,7 @@
   Cache-Control: public, max-age=0, stale-while-revalidate=120
 
 /posts/*
+  Cache-Control: public, max-age=0, stale-while-revalidate=120
+
+/404.html
   Cache-Control: public, max-age=0, stale-while-revalidate=120

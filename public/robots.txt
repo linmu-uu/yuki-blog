@@ -1,0 +1,8 @@
+# 让爬虫抓到整站，只有后台发布页不进索引。
+# 站点地图在 /sitemap.xml（构建时按文章列表生成）。
+
+User-agent: *
+Allow: /
+Disallow: /admin/
+
+Sitemap: https://yuki666.online/sitemap.xml
