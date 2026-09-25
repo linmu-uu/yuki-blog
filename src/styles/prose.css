@@ -81,11 +81,16 @@
 .prose code {
 	padding: 2px 6px;
 	border-radius: 6px;
-	background: rgba(255, 255, 255, 0.08);
+	/*
+	 * 文字色**不能**用壁纸派生的 --accent-2：那张图偏亮时对比度就不够，
+	 * Lighthouse 在文章页抓到 38 处「颜色对比度不足」全是行内代码。
+	 * 现在改成固定的近白色文字，色相由底色的 accent 承担。
+	 */
+	background: rgba(var(--accent-rgb), 0.18);
 	border: 1px solid var(--border);
 	font-family: var(--font-mono);
 	font-size: 0.875em;
-	color: var(--accent-2);
+	color: #eaf2ff;
 }
 
 .prose pre {

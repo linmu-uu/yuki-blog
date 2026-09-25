@@ -16,4 +16,14 @@ export default defineConfig({
 	build: {
 		inlineStylesheets: "auto",
 	},
+	markdown: {
+		/*
+		 * 代码块高亮走 Shiki。默认主题的注释色是 #6A737D，压在我们这块更深的 pre 背景上
+		 * 对比度只有 4.07（低于 4.5 的 AA 线），Lighthouse 在文章页会判不合格；
+		 * 换成高对比主题后代码块也满分。
+		 */
+		shikiConfig: {
+			theme: "github-dark-high-contrast",
+		},
+	},
 });

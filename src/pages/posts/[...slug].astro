@@ -39,7 +39,8 @@ const publishedLabel = new Intl.DateTimeFormat("zh-CN", {
 	articleTags={post.data.tags}
 	preconnect={[site.twikooApi]}
 >
-	<article class="post">
+	<main>
+		<article class="post">
 		<header class="post__header">
 			<div class="shell post__header-inner">
 				<div class="post__meta">
@@ -88,7 +89,8 @@ const publishedLabel = new Intl.DateTimeFormat("zh-CN", {
 		<div class="shell post__footer">
 			<Comment />
 		</div>
-	</article>
+		</article>
+	</main>
 </BaseLayout>
 
 <style>
@@ -198,8 +200,15 @@ const publishedLabel = new Intl.DateTimeFormat("zh-CN", {
 	}
 
 	.post__toc a {
+		/* 可点区域要 ≥24×24（Lighthouse 手机端的 tap targets 审计） */
+		display: inline-flex;
+		align-items: center;
+		min-height: 26px;
+		padding: 2px 8px;
+		margin-left: -8px;
+		border-radius: var(--radius-sm);
 		color: var(--text-muted);
-		transition: color var(--dur) var(--ease-soft);
+		transition: color var(--dur) var(--ease-soft), background var(--dur) var(--ease-soft);
 	}
 
 	.post__toc a:hover {

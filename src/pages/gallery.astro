@@ -118,7 +118,8 @@ const total = albums.reduce((sum, album) => sum + album.images.length, 0);
 		padding: 0;
 		list-style: none;
 		font-size: var(--text-xs);
-		color: var(--accent-3);
+		/* 别用壁纸派生的 --accent-3 当正文色：对比度随壁纸浮动，可能低于 AA */
+		color: var(--text-dim);
 	}
 
 	.album__grid {

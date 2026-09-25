@@ -21,12 +21,14 @@
 ## 二、当前状态快照（2026-09-24）
 
 - 主站：**11 篇文章**、搜索索引 54634 字；构建 **21 个页面**约 1.5 秒；工作区干净
-- 主站线上版本：`a94f138e-4127-46e5-9331-2a0e55651e60`（Worker 名 `firefly`；第四轮部署六次：壁纸 → 新文章 → 日历/锐化 → 壁纸高清化 → 留言样式修复 → SEO）
+- 主站线上版本：`1ebfeefd-cf7b-4b46-a672-eae9a2c7bd08`（Worker 名 `firefly`；第四轮部署七次：壁纸 → 新文章 → 日历/锐化 → 壁纸高清化 → 留言样式修复 → SEO → 无障碍修复）
 - 壁纸轮换：`ba-*` 10 张 + **`ai-*` 4 张**（白子雨夜 / 优香教室 / 星野黄昏 / 三一教堂），桌面 **3840 / 2560 / 1600** 三档（`srcset` 的真实宽度来自 `src/data/wallpaper-sizes.json`）、手机 1080×1920；母版由 ComfyUI `4x-AnimeSharp` 放大后再转码（见第八节）
 - 线上抽查：真机 Chromium 开首页 12 次，命中 `ai-desktop-03/04` 共 3 次，主题色随壁纸变化正常
 - SEO：全站有 JSON-LD（首页 `WebSite` + 站内搜索框，文章页 `BlogPosting` + `BreadcrumbList`）、
   每篇文章一张 1200×630 分享卡片 `/og/<slug>.jpg`、站点地图带 `lastmod` 与图片扩展；
   schema.org 官方验证器实测 0 错误
+- Lighthouse（手机预设，装在本机证据目录里跑）：**全站 19 个页面 无障碍 / 最佳做法 / SEO 全部 100**，
+  性能 96–100（首页手机 99、桌面 100；唯一的小遗憾是 Twikoo 那个权重 0 的 source map 警告）
 - 音乐接口线上版本：`b5196ea7-5a41-4b10-b5a3-10f1070a7e39`
 - 最近提交：见 `git log`（本轮：新文章 + 音频压缩 + Lua 5.5 兼容修复）
 - 主要功能：首页（壁纸轮换 + 跟随壁纸变色）、文章、动态、相册、友链、留言、关于、**搜索**、发布后台 `/admin`、
@@ -187,6 +189,19 @@ Worker 里 `fetch` 上游立刻抛 `TypeError: Invalid header value.`。症状�
 正确姿势：先量所有候选字号的折行结果，挑「最大的、能塞进 ≤4 行」的那档，
 再把整块按固定区间（装饰条下方 205 ~ 标签上方 470）垂直居中。
 
+**22. 给第三方组件打 a11y 补丁，要先搞清它把 DOM 挪到哪了。**
+Twikoo 初始化时会把我们给的 `<div id="tcomment">` **整个换成它自己的 `<div id="twikoo">`**。
+本喵第一版补丁在 `#tcomment` 里找元素，等于对着空气打拳——Lighthouse 分数一点没动。
+正确做法：在**外层自己控制的 section**（`#comments`）里找，`polishTwikoo()` 就是这么写的。
+另外这类补丁要写成幂等的，并等渲染完再补一次（评论列表是异步来的）。
+
+**23. 壁纸派生的颜色不能拿来当正文色。**
+主题色是从当前壁纸算的，所以 `--accent-2` / `--accent-3` 的亮度完全看今天随机到哪张图——
+行内代码（`.prose code`）和图库标签（`.album__tags`）都因为这个被 Lighthouse 判「对比度不足」。
+现在文字改用固定色（`#eaf2ff` / `--text-dim`），色相靠半透明底色保留。
+顺带发现 `--text-dim` 原来是 `#66799b`，对 `--bg` 只有 **4.37**（AA 线 4.5），已经调到 `#8296b8`（6.4）。
+**以后凡是新加的正文/次要文字，都别直接用 accent 系颜色。**
+
 ## 六、待办 / 已知问题
 
 - [x] `yuki-moments` 已 `git init` 并提交首次快照（commit `2abb539`，.gitignore 已排除 node_modules/.wrangler/.dev.vars）
@@ -201,6 +216,8 @@ Worker 里 `fetch` 上游立刻抛 `TypeError: Invalid header value.`。症状�
   主人那边点「验证」通过后，在 Sitemaps 里提交 `sitemap.xml` 就行
 - [x] Bing 站长工具：可以直接「从 Google Search Console 导入」，不用再验证一次
 - [ ] 百度搜索资源平台**放弃**（2026-09-25）：添加站点反复失败，怀疑是本机代理 fake-ip 干扰 + 无备案在百度抓得极慢，主人决定不做
+- [ ] Lighthouse 剩下的唯一提示是 Twikoo 的 `valid-source-maps`（588KB 的 nocss.js 没带 source map）：
+  权重 0，不影响最佳做法满分；真要消掉就得自己托管一份 .map 或者把 vendored 文件换掉
 - [ ] SEO 还能继续做的：① 加 `/tags/<标签>/` 标签页——长尾搜索很容易命中，现在站内只有搜索没有标签落地页；
   ② 给文章加「相关文章」，延长停留时间
 - [x] AI 壁纸已上线并高清化（第四轮）：原图 → ComfyUI `4x-AnimeSharp` 放大到 10240 宽 → `npm run wallpapers:ai`
@@ -221,6 +238,10 @@ Worker 里 `fetch` 上游立刻抛 `TypeError: Invalid header value.`。症状�
   - 2026-09-25 实测过：走系统代理请求 `https://yuki666.online/sitemap.xml` 会卡到超时，但
     `curl.exe`（默认直连）和 `workers.dev` 域名都秒回——**站点没问题，是本机代理偶尔抽风**，
     排查这类「打不开」先用 `curl.exe -s -o NUL -w '%{http_code} %{time_total}'` 对照一下
+- Lighthouse：装在 `C:\Users\ROG\.codex\visualizations\2026\09\24\01a0d3fb-...\`（`npm i lighthouse`，13.5.0），
+  跑法是给 `CHROME_PATH` 指本机缓存的 Chromium，并且**把 TEMP/TMP 指到可写目录**
+  （不然 chrome-launcher 清理临时目录会报 `EPERM` 让整次跑挂掉，偶尔抽风，重跑即可）。
+  小工具：`lh-run.mjs <url> [mobile|desktop|scores]`，完整 JSON 存在同目录，别往对话里塞。
 - 硬件：**RTX 5070 Laptop GPU（8GB 显存，驱动 617.14）+ Blackwell 架构（`sm_120`）**。
   D: 盘还剩 90GB 左右（ComfyUI + 模型已占约 12GB）
 - 工具（现在都在 PATH 上，scoop shims）：

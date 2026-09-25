@@ -124,6 +124,51 @@ const { title = "留言" } = Astro.props;
 		return path.endsWith("/") && path.length > 1 ? path.slice(0, -1) : path;
 	};
 
+	/**
+	 * Twikoo 的 DOM 是它自己渲染的，有几处无障碍/SEO 小毛病，接管后顺手补掉。
+	 *
+	 * Lighthouse 实测（留言板页）：无障碍 89、SEO 92 全是下面三条拖的——
+	 *   1. `label`：评论输入框没有可访问名称（它只给了 placeholder）
+	 *   2. `link-name`：Markdown 说明的链接只有 `alt` 属性、没有可读文本
+	 *   3. `crawlable-anchors`：管理面板的关闭按钮是没 `href` 的 `<a>`
+	 */
+	const polishTwikoo = () => {
+		/*
+		 * 注意：Twikoo 会把我们给的 `#tcomment` 整个换成它自己的 `#twikoo`，
+		 * 所以这里要在**外层 section** 里找元素，别去找 `#tcomment`（那时它已经不存在了）。
+		 */
+		const mount =
+			document.getElementById("comments") ??
+			document.getElementById("twikoo") ??
+			document.getElementById("tcomment");
+		if (!mount) return;
+
+		// 1) 输入框：没有 label 也没有 aria-label 的，补一个可访问名称
+		for (const field of mount.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>("textarea, input")) {
+			if (field.getAttribute("aria-label") || field.getAttribute("aria-labelledby")) continue;
+			if (field.id && mount.querySelector(`label[for="${field.id}"]`)) continue;
+			const placeholder = field.getAttribute("placeholder")?.trim();
+			field.setAttribute(
+				"aria-label",
+				placeholder || (field.tagName === "TEXTAREA" ? "评论内容" : "评论输入框"),
+			);
+		}
+
+		// 2) 纯图标链接：把原本写在 alt 里的说明挪成 aria-label
+		for (const link of mount.querySelectorAll<HTMLElement>("a")) {
+			if (link.textContent?.trim() || link.getAttribute("aria-label")) continue;
+			const alt = link.getAttribute("alt")?.trim();
+			if (alt) link.setAttribute("aria-label", alt);
+		}
+
+		// 3) 没有 href 的 <a>（关闭按钮这类）：补一个可爬的地址，同时拦住默认跳转，
+		//    这样搜索引擎能跟着爬，点起来的行为还是原来的（Twikoo 自己的监听器照常跑）
+		for (const link of mount.querySelectorAll<HTMLAnchorElement>("a:not([href])")) {
+			link.href = "#comments";
+			link.addEventListener("click", (event) => event.preventDefault());
+		}
+	};
+
 	const boot = async () => {
 		const mount = document.getElementById("tcomment");
 		if (!mount || mount.dataset.ready === "1") return;
@@ -143,6 +188,9 @@ const { title = "留言" } = Astro.props;
 
 		try {
 			await global.init({ envId: ENV_ID, el: "#tcomment", path: currentPath(), lang: "zh-CN" });
+			polishTwikoo();
+			// 评论列表是 init 之后异步渲染的，稍后再补一遍（函数是幂等的）
+			window.setTimeout(polishTwikoo, 1200);
 		} catch (error) {
 			console.error("[Twikoo] 初始化失败：", error);
 		}

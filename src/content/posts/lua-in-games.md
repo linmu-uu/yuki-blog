@@ -17,7 +17,7 @@ draft: false
 
 ## 先看全貌
 
-| | Garry's Mod | Roblox | FiveM |
+| 对比项 | Garry's Mod | Roblox | FiveM |
 | --- | --- | --- | --- |
 | Lua 方言 | LuaJIT（5.1 语法 + 即时编译） | Luau（带类型标注的方言） | Lua 5.4 |
 | 你在做什么 | 改别人的游戏模式 | 从零做一款游戏 | 搭 GTA V 的多人服务器 |

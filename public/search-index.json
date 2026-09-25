@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-24T15:25:56Z",
+  "generatedAt": "2026-09-25T15:46:25Z",
   "count": 11,
   "posts": [
     {
@@ -59,8 +59,8 @@
       "category": "学习笔记",
       "description": "三个真正用 Lua 写模组/游戏的官方平台：GMod 的 hook 与 realm、Roblox 的 Luau 与 RemoteEvent、FiveM 的 fxmanifest 与事件系统。附最小可跑示例，以及各自最容易踩的坑。",
       "tags": ["Lua", "游戏", "模组"],
-      "chars": 7217,
-      "text": "上一篇写了 Lua 的八个坑。这篇聊点好玩的：哪些游戏是真的在用 Lua。 答案是：远比想象中多。Lua 的解释器很小（几百 KB）、启动快、能把宿主程序的对象安全地暴露给脚本， 还天然适合做沙箱——所以游戏引擎特别爱把它嵌进去当脚本层。 下面挑三个「官方支持、社区成熟」的平台：Garry's Mod（工具沙盒）、Roblox（做游戏）、FiveM（GTA V 多人服）。 它们的共同点是：你写的东西是平台允许的，不用担心账号风险，也不需要碰任何注入工具。 先看全貌     Garry's Mod   Roblox   FiveM     ---   ---   ---   ---     Lua 方言   LuaJIT（5.1 语法 + 即时编译）   Luau（带类型标注的方言）   Lua 5.4     你在做什么   改别人的游戏模式   从零做一款游戏   搭 GTA V 的多人服务器     服务端   lua/autorun/server/ 等   ServerScriptService   serverscript     客户端   lua/autorun/client/ 等   StarterPlayerScripts 等   clientscript     通信方式   net 库   RemoteEvent / RemoteFunction   TriggerServerEvent 等     发布   Steam 创意工坊   Roblox 平台一键发布   自己开服 / 上架框架   接下来按平台过一遍，每段都是「结构 → 最小示例 → 特有的坑」。 一、Garry's Mod：hook + realm GMod 是 Source 引擎上的沙盒，写模组就是往 garrysmod/addons/你的插件/lua/ 里丢文件。 目录结构决定\"这段代码跑在哪\" 这个划分是 GMod 最重要的概念：一个 Lua 文件属于哪个 realm，决定了它能调用哪些 API。 在服务端文件里写 LocalPlayer 会直接报错，反过来在客户端里改 player.GetAll() 拿到的实体也改不动服务端状态。 最小示例 hook.Add(事件名, 唯一标识, 回调) 是 GMod 的骨架：引擎在各种时机广播事件，你的代码挂在上面就行。 常用事件有 PlayerSpawn、PlayerDeath、Think（每帧）、HUDPaint（每帧绘制 HUD）。 客户端和服务�"
+      "chars": 7227,
+      "text": "上一篇写了 Lua 的八个坑。这篇聊点好玩的：哪些游戏是真的在用 Lua。 答案是：远比想象中多。Lua 的解释器很小（几百 KB）、启动快、能把宿主程序的对象安全地暴露给脚本， 还天然适合做沙箱——所以游戏引擎特别爱把它嵌进去当脚本层。 下面挑三个「官方支持、社区成熟」的平台：Garry's Mod（工具沙盒）、Roblox（做游戏）、FiveM（GTA V 多人服）。 它们的共同点是：你写的东西是平台允许的，不用担心账号风险，也不需要碰任何注入工具。 先看全貌   对比项   Garry's Mod   Roblox   FiveM     ---   ---   ---   ---     Lua 方言   LuaJIT（5.1 语法 + 即时编译）   Luau（带类型标注的方言）   Lua 5.4     你在做什么   改别人的游戏模式   从零做一款游戏   搭 GTA V 的多人服务器     服务端   lua/autorun/server/ 等   ServerScriptService   serverscript     客户端   lua/autorun/client/ 等   StarterPlayerScripts 等   clientscript     通信方式   net 库   RemoteEvent / RemoteFunction   TriggerServerEvent 等     发布   Steam 创意工坊   Roblox 平台一键发布   自己开服 / 上架框架   接下来按平台过一遍，每段都是「结构 → 最小示例 → 特有的坑」。 一、Garry's Mod：hook + realm GMod 是 Source 引擎上的沙盒，写模组就是往 garrysmod/addons/你的插件/lua/ 里丢文件。 目录结构决定\"这段代码跑在哪\" 这个划分是 GMod 最重要的概念：一个 Lua 文件属于哪个 realm，决定了它能调用哪些 API。 在服务端文件里写 LocalPlayer 会直接报错，反过来在客户端里改 player.GetAll() 拿到的实体也改不动服务端状态。 最小示例 hook.Add(事件名, 唯一标识, 回调) 是 GMod 的骨架：引擎在各种时机广播事件，你的代码挂在上面就行。 常用事件有 PlayerSpawn、PlayerDeath、Think（每帧）、HUDPaint（每帧绘制 HUD）。 客户端�"
     },
     {
       "title": "静态博客怎么选：Astro、Hugo、手写，以及这个站为什么是 Astro",
@@ -69,8 +69,8 @@
       "category": "建站笔记",
       "description": "选静态站点方案，其实是在选三件事：内容怎么写、页面怎么拼、JS 什么时候进浏览器。横向对比 Astro、Hugo、Hexo、纯手写，并说明这个博客最后为什么留在 Astro。",
       "tags": ["Astro", "建站", "选型"],
-      "chars": 7053,
-      "text": "每次有人问\"博客用什么搭比较好\"，回答之前我都想先问一句：你想要的是什么。 因为所谓\"选静态站点框架\"，本质上是在同时回答三个问题： 内容怎么写——Markdown 还是别的？写完要不要检查字段？ 页面怎么拼——能不能把侧边栏、卡片、组件抽出来复用？ JS 什么时候进浏览器——是默认全打包进去，还是按需加载？ 这三件事的答案，决定了这个框架适不适合你。这篇横向对比几种主流选择，最后说说这个博客为什么是 Astro。 先看一张对比表     Astro   Hugo   Hexo   纯手写     ---   ---   ---   ---   ---     语言 / 运行环境   Node + 各框架语法   Go，单个二进制   Node   你自己     构建速度   快（本项目 17 页约 1.5s）   极快（几千页秒级）   中等   取决于你写了多少     默认 JS 体积   几乎为零   几乎为零   看主题   你自己控制     组件复用   ✅ 一等公民   模板/partial   主题内模板   自己造     内容校验   ✅ 内置 schema   弱   弱   无     交互能力   岛式架构，可嵌 React/Vue/Svelte   自己写 JS   自己写 JS   自己写 JS     上手成本   中（要会一点 JS/TS）   低（会 Markdown 就能发）   低   高     适合   有个性化界面 + 一点交互的站点   内容为主、篇数很多   想要现成主题的博客   就想折腾   下面逐个说。 一、Hugo：为\"快\"和\"零依赖\"而生的那一套 Hugo 是 Go 写的，编译成一个可执行文件。它的最大卖点非常直白：快。 几千篇文章的站点，构建几秒钟就能跑完 没有 nodemodules，一个二进制文件 + 一个内容目录就能跑 部署时甚至可以在 CI 里直接下载二进制执行，不用装整个前端工具链 缺点也来自同一个地方：模板是 Go 的模板语法，写起来没有组件那种\"手感\"； 遇到交互（搜索、播放器、评论）基本都要自己写 JS，然后手动�"
+      "chars": 7063,
+      "text": "每次有人问\"博客用什么搭比较好\"，回答之前我都想先问一句：你想要的是什么。 因为所谓\"选静态站点框架\"，本质上是在同时回答三个问题： 内容怎么写——Markdown 还是别的？写完要不要检查字段？ 页面怎么拼——能不能把侧边栏、卡片、组件抽出来复用？ JS 什么时候进浏览器——是默认全打包进去，还是按需加载？ 这三件事的答案，决定了这个框架适不适合你。这篇横向对比几种主流选择，最后说说这个博客为什么是 Astro。 先看一张对比表   对比项   Astro   Hugo   Hexo   纯手写     ---   ---   ---   ---   ---     语言 / 运行环境   Node + 各框架语法   Go，单个二进制   Node   你自己     构建速度   快（本项目 17 页约 1.5s）   极快（几千页秒级）   中等   取决于你写了多少     默认 JS 体积   几乎为零   几乎为零   看主题   你自己控制     组件复用   ✅ 一等公民   模板/partial   主题内模板   自己造     内容校验   ✅ 内置 schema   弱   弱   无     交互能力   岛式架构，可嵌 React/Vue/Svelte   自己写 JS   自己写 JS   自己写 JS     上手成本   中（要会一点 JS/TS）   低（会 Markdown 就能发）   低   高     适合   有个性化界面 + 一点交互的站点   内容为主、篇数很多   想要现成主题的博客   就想折腾   下面逐个说。 一、Hugo：为\"快\"和\"零依赖\"而生的那一套 Hugo 是 Go 写的，编译成一个可执行文件。它的最大卖点非常直白：快。 几千篇文章的站点，构建几秒钟就能跑完 没有 nodemodules，一个二进制文件 + 一个内容目录就能跑 部署时甚至可以在 CI 里直接下载二进制执行，不用装整个前端工具链 缺点也来自同一个地方：模板是 Go 的模板语法，写起来没有组件那种\"手感\"； 遇到交互（搜索、播放器、评论）基本都要自己写 JS，然�"
     },
     {
       "title": "一个「纯静态」博客背后的五个 Worker",
