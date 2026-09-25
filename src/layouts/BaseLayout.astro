@@ -21,6 +21,12 @@ interface Props {
 	preconnect?: string[];
 	/** 分享卡片用的图（og:image），默认用头像；传站点内的绝对路径即可 */
 	image?: string;
+	/** 结构化数据：页面用 src/data/seo.ts 拼好、序列化之后的 JSON 字符串数组 */
+	schema?: string[];
+	/** 文章页才有：喂给 og:article 的元数据 */
+	publishedTime?: string;
+	modifiedTime?: string;
+	articleTags?: string[];
 	/** og:type，文章页传 "article" */
 	type?: string;
 	/** 规范链接。传 false 表示这一页不要 canonical（比如 404 页） */
@@ -34,6 +40,10 @@ const {
 	image = site.avatar,
 	type = "website",
 	canonical = new URL(Astro.url.pathname, site.url).href,
+	schema = [],
+	publishedTime,
+	modifiedTime,
+	articleTags = [],
 } = Astro.props;
 
 const preconnectOrigins = [...new Set(preconnect.filter(Boolean))];
@@ -64,7 +74,12 @@ const themeCss = [
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<title>{title}</title>
 		<meta name="description" content={description} />
+		<meta name="author" content={site.author} />
 		<meta name="generator" content={Astro.generator} />
+		{/* 文章页的时间和标签，给机器看的那一份 */}
+		{publishedTime && <meta property="article:published_time" content={publishedTime} />}
+		{modifiedTime && <meta property="article:modified_time" content={modifiedTime} />}
+		{articleTags.map((tag) => <meta property="article:tag" content={tag} />)}
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 		{/* 订阅：RSS 全文输出（src/pages/rss.xml.ts 生成） */}
@@ -91,6 +106,11 @@ const themeCss = [
 		<meta name="twitter:description" content={description} />
 		<meta name="twitter:image" content={shareImage} />
 		{preconnectOrigins.map((origin) => <link rel="preconnect" href={origin} crossorigin />)}
+		{/*
+		 * 结构化数据（JSON-LD）：网站首页是 WebSite（含站内搜索框），文章页是
+		 * BlogPosting + BreadcrumbList，统一由 src/data/seo.ts 拼好传进来。
+		 */}
+		{schema.map((item) => <script type="application/ld+json" is:inline set:html={item} />)}
 		{/* 构建时先烘焙一套配色，禁用 JS 时也能看；下面的脚本会按这次随机到的壁纸覆盖它 */}
 		<style id="wallpaper-theme" is:inline set:html={themeCss}></style>
 		{

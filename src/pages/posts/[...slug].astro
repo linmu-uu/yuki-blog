@@ -4,6 +4,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 import Comment from "../../components/Comment.astro";
 import "../../styles/prose.css";
 import { site } from "../../data/site";
+import { postSchemas } from "../../data/seo";
 
 export async function getStaticPaths() {
 	const posts = await getCollection("posts", ({ data }) => !data.draft);
@@ -17,6 +18,9 @@ const { post } = Astro.props;
 const { Content, headings } = await render(post);
 const toc = headings.filter((heading) => heading.depth <= 3);
 
+/* 每篇文章都有构建时生成的分享卡片（src/pages/og/[slug].jpg.ts） */
+const ogImage = post.data.image || "/og/" + post.id.replace(/\.(md|mdx)$/, "") + ".jpg";
+
 const publishedLabel = new Intl.DateTimeFormat("zh-CN", {
 	year: "numeric",
 	month: "long",
@@ -28,7 +32,11 @@ const publishedLabel = new Intl.DateTimeFormat("zh-CN", {
 	title={post.data.title}
 	description={post.data.description}
 	type="article"
-	image={post.data.image || site.avatar}
+	image={ogImage}
+	schema={postSchemas(post, ogImage)}
+	publishedTime={post.data.published.toISOString()}
+	modifiedTime={(post.data.updated ?? post.data.published).toISOString()}
+	articleTags={post.data.tags}
 	preconnect={[site.twikooApi]}
 >
 	<article class="post">

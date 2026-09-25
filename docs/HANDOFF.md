@@ -21,9 +21,12 @@
 ## 二、当前状态快照（2026-09-24）
 
 - 主站：**11 篇文章**、搜索索引 54634 字；构建 **21 个页面**约 1.5 秒；工作区干净
-- 主站线上版本：`21745ff4-0042-4424-99d3-1e778174719c`（Worker 名 `firefly`；第四轮部署五次：壁纸 → 新文章 → 日历/锐化 → 壁纸高清化 → 留言样式修复）
+- 主站线上版本：`a94f138e-4127-46e5-9331-2a0e55651e60`（Worker 名 `firefly`；第四轮部署六次：壁纸 → 新文章 → 日历/锐化 → 壁纸高清化 → 留言样式修复 → SEO）
 - 壁纸轮换：`ba-*` 10 张 + **`ai-*` 4 张**（白子雨夜 / 优香教室 / 星野黄昏 / 三一教堂），桌面 **3840 / 2560 / 1600** 三档（`srcset` 的真实宽度来自 `src/data/wallpaper-sizes.json`）、手机 1080×1920；母版由 ComfyUI `4x-AnimeSharp` 放大后再转码（见第八节）
 - 线上抽查：真机 Chromium 开首页 12 次，命中 `ai-desktop-03/04` 共 3 次，主题色随壁纸变化正常
+- SEO：全站有 JSON-LD（首页 `WebSite` + 站内搜索框，文章页 `BlogPosting` + `BreadcrumbList`）、
+  每篇文章一张 1200×630 分享卡片 `/og/<slug>.jpg`、站点地图带 `lastmod` 与图片扩展；
+  schema.org 官方验证器实测 0 错误
 - 音乐接口线上版本：`b5196ea7-5a41-4b10-b5a3-10f1070a7e39`
 - 最近提交：见 `git log`（本轮：新文章 + 音频压缩 + Lua 5.5 兼容修复）
 - 主要功能：首页（壁纸轮换 + 跟随壁纸变色）、文章、动态、相册、友链、留言、关于、**搜索**、发布后台 `/admin`、
@@ -68,6 +71,8 @@ npx wrangler dev --remote           # 本地直连线上资源调试（注意是
 | 站点标题、导航、社交链接、音乐接口地址 | `src/data/site.ts` |
 | 壁纸白名单（哪些前缀进轮换） | `src/data/background.ts` 的 `ALLOWED_PREFIXES` |
 | 壁纸各档真实宽度（srcset 用） | `src/data/wallpaper-sizes.json`（由 `npm run wallpapers:ai` 写，别手改） |
+| 结构化数据（JSON-LD） | `src/data/seo.ts`；页面通过 `BaseLayout` 的 `schema` 属性传进去 |
+| 文章分享卡片（og:image） | `src/pages/og/[slug].jpg.ts`（构建时 sharp 渲染 SVG，加文章自动多一张） |
 | 缓存策略（HTML / 图片 / 索引） | `public/_headers` |
 | 文章字段校验 | `src/content.config.ts` |
 | 部署配置（Worker 名、静态资源目录） | `wrangler.toml` |
@@ -172,6 +177,16 @@ Worker 里 `fetch` 上游立刻抛 `TypeError: Invalid header value.`。症状�
 自测方法：客户端连续切两次带留言框的页面，看 `document.querySelectorAll('link[href*="twikoo"]').length` 是不是 2，
 再看 `.tk-submit` 的 `margin` 是不是 `16px 0px 0px`（样式没生效时是 `0px`）。
 
+**20. schema.org 验证器的返回体带 `)]}'` 前缀。**
+拿 `Invoke-WebRequest`/`JSON.parse` 直接解析会报 `JsonToken EndConstructor is not valid`。
+请求姿势：`POST https://validator.schema.org/validate`，body 是 `url=<页面地址>`（表单编码），
+拿到文本后先 `text.replace(/^\)\]}'\s*/, "")` 再去 parse。本喵的小工具在证据目录 `schema-check.mjs`。
+
+**21. 用 SVG 画文字卡片时，折行必须按字号算宽度。**
+第一版按「一行 16 个字」硬折行，字号 76px 时一行能占 1216px，标题直接被切掉右边。
+正确姿势：先量所有候选字号的折行结果，挑「最大的、能塞进 ≤4 行」的那档，
+再把整块按固定区间（装饰条下方 205 ~ 标签上方 470）垂直居中。
+
 ## 六、待办 / 已知问题
 
 - [x] `yuki-moments` 已 `git init` 并提交首次快照（commit `2abb539`，.gitignore 已排除 node_modules/.wrangler/.dev.vars）
@@ -182,6 +197,9 @@ Worker 里 `fetch` 上游立刻抛 `TypeError: Invalid header value.`。症状�
 - [x] 音乐 cookie 已配好（2026-09-24）：默认歌单实测 **4/10 → 8/10** 能播（`hasCookie:true`）。
   剩下两首 `FRND - Before U I Didn't Exist`、`FRND - Erase` 是 `code=404 reason=null`，网易云那边本身没版权，配 cookie 也拿不到，只能换歌
 - [ ] 网易云 cookie 会过期（几个月到一年），哪天歌又播不动了就重新抄一次；上传方式见踩坑 14
+- [ ] SEO 还能继续做的：① 去 Google Search Console / Bing 站长 / 百度搜索资源平台提交 `sitemap.xml`（要主人自己的账号，本喵做不了）；
+  ② 加 `/tags/<标签>/` 标签页——长尾搜索很容易命中，现在站内只有搜索没有标签落地页；
+  ③ 给文章加「相关文章」，延长停留时间
 - [x] AI 壁纸已上线并高清化（第四轮）：原图 → ComfyUI `4x-AnimeSharp` 放大到 10240 宽 → `npm run wallpapers:ai`
   出 3840/2560/1600 + 手机四档 → `wallpapers:palette` → 构建 → 部署
 - [ ] 想要**更明显**的清晰度提升，只能从源头重出图：要么 imagegen CLI 直接出 4K（需要 `OPENAI_API_KEY` 且有额度、代理出口在受支持地区），
