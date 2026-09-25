@@ -44,20 +44,13 @@ const { title = "留言" } = Astro.props;
 	 * 评论是最重的一块资源（JS 约 170KB + 样式），所以不做首屏加载：
 	 * 等留言区快滚进视口时再把资源插进来，首页和文章首屏就省下了这笔开销。
 	 */
-	let assetsPromise: Promise<void> | null = null;
+	let scriptPromise: Promise<void> | null = null;
 
-	const loadAssets = () => {
-		if (assetsPromise) return assetsPromise;
+	/** 脚本只需要加载一次（浏览器会缓存，这里再用 promise 兜底） */
+	const loadScript = () => {
+		if (scriptPromise) return scriptPromise;
 
-		assetsPromise = new Promise<void>((resolve) => {
-			for (const href of STYLES) {
-				if (document.querySelector(`link[href="${href}"]`)) continue;
-				const link = document.createElement("link");
-				link.rel = "stylesheet";
-				link.href = href;
-				document.head.appendChild(link);
-			}
-
+		scriptPromise = new Promise<void>((resolve) => {
 			if (document.querySelector(`script[src="${SCRIPT}"]`)) {
 				resolve();
 				return;
@@ -71,8 +64,39 @@ const { title = "留言" } = Astro.props;
 			document.head.appendChild(script);
 		});
 
-		return assetsPromise;
+		return scriptPromise;
 	};
+
+	/**
+	 * 样式表**每次都要重新确认**，不能像脚本那样只做一次。
+	 *
+	 * ClientRouter 切页时会拿新页面的 <head> 去替换旧的，我们动态插进去的 <link>
+	 * 会被顺手删掉；而 promise 一旦 resolved 就不会再插第二次。
+	 * 结果是第二次进留言页时「有 JS 没 CSS」：评论框和列表变成一坨没样式的文字，
+	 * 头像还会撑成一个大圆，只有整页刷新才能恢复。
+	 */
+	const ensureStyles = () =>
+		Promise.all(
+			STYLES.map(
+				(href) =>
+					new Promise<void>((resolve) => {
+						const existing = document.querySelector<HTMLLinkElement>(`link[href="${href}"]`);
+						if (existing?.sheet) {
+							resolve();
+							return;
+						}
+
+						const link = existing ?? document.createElement("link");
+						if (!existing) {
+							link.rel = "stylesheet";
+							link.href = href;
+							document.head.appendChild(link);
+						}
+						link.addEventListener("load", () => resolve(), { once: true });
+						link.addEventListener("error", () => resolve(), { once: true });
+					}),
+			),
+		);
 
 	const twikooGlobal = () => (window as unknown as { twikoo?: TwikooGlobal }).twikoo;
 
@@ -106,7 +130,11 @@ const { title = "留言" } = Astro.props;
 		mount.dataset.ready = "1";
 		mount.textContent = "";
 
-		await loadAssets();
+		// 样式和脚本一起等：**必须先有样式再让 Twikoo 渲染**，
+		// 否则冷启动时会先闪一下没样式的评论框。
+		await Promise.all([ensureStyles(), loadScript()]);
+		await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+
 		const global = await waitForGlobal();
 		if (!global) {
 			mount.textContent = "评论加载失败，刷新一下试试喵";
