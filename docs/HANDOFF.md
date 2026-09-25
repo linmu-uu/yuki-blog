@@ -197,9 +197,12 @@ Worker 里 `fetch` 上游立刻抛 `TypeError: Invalid header value.`。症状�
 - [x] 音乐 cookie 已配好（2026-09-24）：默认歌单实测 **4/10 → 8/10** 能播（`hasCookie:true`）。
   剩下两首 `FRND - Before U I Didn't Exist`、`FRND - Erase` 是 `code=404 reason=null`，网易云那边本身没版权，配 cookie 也拿不到，只能换歌
 - [ ] 网易云 cookie 会过期（几个月到一年），哪天歌又播不动了就重新抄一次；上传方式见踩坑 14
-- [ ] SEO 还能继续做的：① 去 Google Search Console / Bing 站长 / 百度搜索资源平台提交 `sitemap.xml`（要主人自己的账号，本喵做不了）；
-  ② 加 `/tags/<标签>/` 标签页——长尾搜索很容易命中，现在站内只有搜索没有标签落地页；
-  ③ 给文章加「相关文章」，延长停留时间
+- [x] Google Search Console：验证 meta 已上线（commit `a11e385`，字段 `google-site-verification`，**别删**）；
+  主人那边点「验证」通过后，在 Sitemaps 里提交 `sitemap.xml` 就行
+- [x] Bing 站长工具：可以直接「从 Google Search Console 导入」，不用再验证一次
+- [ ] 百度搜索资源平台**放弃**（2026-09-25）：添加站点反复失败，怀疑是本机代理 fake-ip 干扰 + 无备案在百度抓得极慢，主人决定不做
+- [ ] SEO 还能继续做的：① 加 `/tags/<标签>/` 标签页——长尾搜索很容易命中，现在站内只有搜索没有标签落地页；
+  ② 给文章加「相关文章」，延长停留时间
 - [x] AI 壁纸已上线并高清化（第四轮）：原图 → ComfyUI `4x-AnimeSharp` 放大到 10240 宽 → `npm run wallpapers:ai`
   出 3840/2560/1600 + 手机四档 → `wallpapers:palette` → 构建 → 部署
 - [ ] 想要**更明显**的清晰度提升，只能从源头重出图：要么 imagegen CLI 直接出 4K（需要 `OPENAI_API_KEY` 且有额度、代理出口在受支持地区），
@@ -213,6 +216,11 @@ Worker 里 `fetch` 上游立刻抛 `TypeError: Invalid header value.`。症状�
 ## 七、环境事实
 
 - 网络：本机代理 `127.0.0.1:7890`（当前出口日本）。GitHub / scoop 需要它；Cloudflare API 直连可用；OpenAI API 需要代理 + 有额度的账号
+  - 代理是 **fake-ip 模式**（域名解析成 198.18.x.x），所以 `Resolve-DnsName` 查出来的 IP 不可信；要看真实解析得走 DoH
+    （`https://dns.alidns.com/resolve?name=域名&type=A`）
+  - 2026-09-25 实测过：走系统代理请求 `https://yuki666.online/sitemap.xml` 会卡到超时，但
+    `curl.exe`（默认直连）和 `workers.dev` 域名都秒回——**站点没问题，是本机代理偶尔抽风**，
+    排查这类「打不开」先用 `curl.exe -s -o NUL -w '%{http_code} %{time_total}'` 对照一下
 - 硬件：**RTX 5070 Laptop GPU（8GB 显存，驱动 617.14）+ Blackwell 架构（`sm_120`）**。
   D: 盘还剩 90GB 左右（ComfyUI + 模型已占约 12GB）
 - 工具（现在都在 PATH 上，scoop shims）：
