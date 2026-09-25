@@ -76,6 +76,11 @@ const themeCss = [
 		<meta name="description" content={description} />
 		<meta name="author" content={site.author} />
 		<meta name="generator" content={Astro.generator} />
+		{/*
+		 * Google Search Console 的站点归属验证（2026-09-25 加）。
+		 * 验证码是公开信息，别删 —— 删了 GSC 那边会掉验证。
+		 */}
+		<meta name="google-site-verification" content="ARQtnQqDx94txPik1lIMHq-u-R4etmkUWpeHTo368pE" />
 		{/* 文章页的时间和标签，给机器看的那一份 */}
 		{publishedTime && <meta property="article:published_time" content={publishedTime} />}
 		{modifiedTime && <meta property="article:modified_time" content={modifiedTime} />}
