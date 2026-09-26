@@ -21,8 +21,8 @@
 ## 二、当前状态快照（2026-09-24）
 
 - 主站：**11 篇文章**、搜索索引 54634 字；构建 **21 个页面**约 1.5 秒；工作区干净
-- 主站线上版本：`1ebfeefd-cf7b-4b46-a672-eae9a2c7bd08`（Worker 名 `firefly`；第四轮部署七次：壁纸 → 新文章 → 日历/锐化 → 壁纸高清化 → 留言样式修复 → SEO → 无障碍修复）
-- 壁纸轮换：`ba-*` 10 张 + **`ai-*` 4 张**（白子雨夜 / 优香教室 / 星野黄昏 / 三一教堂），桌面 **3840 / 2560 / 1600** 三档（`srcset` 的真实宽度来自 `src/data/wallpaper-sizes.json`）、手机 1080×1920；母版由 ComfyUI `4x-AnimeSharp` 放大后再转码（见第八节）
+- 主站线上版本：`5170e2b0-9775-416a-a685-afaec91cc538`（Worker 名 `firefly`；第四轮部署八次：壁纸 → 新文章 → 日历/锐化 → 壁纸高清化 → 留言样式修复 → SEO → 无障碍修复 → 追加壁纸）
+- 壁纸轮换：**`ba-*` 13 张 + `ai-*` 4 张**（ai 那组是白子雨夜 / 优香教室 / 星野黄昏 / 三一教堂，母版经 ComfyUI `4x-AnimeSharp` 放大)；桌面母版 1600–3840 不等、手机统一 1080×1920；`srcset` 的真实宽度由 `src/data/wallpaper-sizes.json` 提供（`npm run wallpapers:sizes` 生成，别手改）
 - 线上抽查：真机 Chromium 开首页 12 次，命中 `ai-desktop-03/04` 共 3 次，主题色随壁纸变化正常
 - SEO：全站有 JSON-LD（首页 `WebSite` + 站内搜索框，文章页 `BlogPosting` + `BreadcrumbList`）、
   每篇文章一张 1200×630 分享卡片 `/og/<slug>.jpg`、站点地图带 `lastmod` 与图片扩展；
@@ -53,6 +53,7 @@ npm run wallpapers:import    # 从 D:\wallpapers 导入壁纸（压成 AVIF）
 npm run wallpapers:ai        # 把 output/imagegen/*.png（AI 出图）接进轮换：2560 桌面 + 1600 小图 + 1080×1920 竖版
 npm run wallpapers:palette   # 重新提取壁纸配色
 npm run wallpapers:variants  # 生成 1600px 壁纸小图
+npm run wallpapers:sizes     # 重算 srcset 用的真实宽度表（加图 / 导入之后跑一次）
 npm run gallery:thumbs       # 生成相册缩略图
 ```
 
@@ -202,6 +203,23 @@ Twikoo 初始化时会把我们给的 `<div id="tcomment">` **整个换成它自
 顺带发现 `--text-dim` 原来是 `#66799b`，对 `--bg` 只有 **4.37**（AA 线 4.5），已经调到 `#8296b8`（6.4）。
 **以后凡是新加的正文/次要文字，都别直接用 accent 系颜色。**
 
+**24. `wallpapers:import` 默认会「清空重编号」，新加图要加 `--append`。**
+脚本原本的语义是「整个目录重新导入」，所以开头会把 `ba-desktop-*/ba-mobile-*` 全删掉再从 01 编号。
+2026-09-26 主人新加了 3 张图放在 `D:\wallpapers\new1`，如果直接跑默认模式，原来那 10 张会被顶掉。
+现在加了追加模式：
+
+```bash
+node scripts/import-wallpapers.mjs D:/wallpapers/new1 --append   # 从当前最大编号往后接
+npm run wallpapers:variants   # 补 1600 小图
+npm run wallpapers:palette    # 补配色
+npm run wallpapers:sizes      # 重算尺寸表（见下条）
+npm run deploy
+```
+
+**附带修好的老毛病**：以前 `srcset` 给所有桌面图都写死 `2560w`，但 `ba-desktop-01/06/07` 实际只有 1920/2000/1923 宽。
+新增 `scripts/record-wallpaper-sizes.mjs`（`npm run wallpapers:sizes`）扫描所有母版的真实宽度写进尺寸表，
+现在浏览器拿到的描述符是准的（例如 `ba-desktop-06` 报 `2000w`、新图 `ba-desktop-13` 报 `1810w`）。
+
 ## 六、待办 / 已知问题
 
 - [x] `yuki-moments` 已 `git init` 并提交首次快照（commit `2abb539`，.gitignore 已排除 node_modules/.wrangler/.dev.vars）
@@ -225,6 +243,8 @@ Twikoo 初始化时会把我们给的 `<div id="tcomment">` **整个换成它自
 - [ ] 想要**更明显**的清晰度提升，只能从源头重出图：要么 imagegen CLI 直接出 4K（需要 `OPENAI_API_KEY` 且有额度、代理出口在受支持地区），
   要么在 ComfyUI 里跑 SDXL img2img / hires（能补细节，但画风会漂一点、耗时约 5–8 分钟一张）
 - [ ] ComfyUI 那条路留作备选（模型与配方见第八节），放大模型 `4x-UltraSharp.pth` 仍未装
+- [ ] 新导入的 `ba-desktop-11/12`（原图 `D:\wallpapers\new1\6ACB…jpg`、`8DCB…jpg`）**右上角带来源站水印**，
+  桌面版竖排小字能看到、手机版裁掉了；介意的话换两张干净的图重导（流程见踩坑 24）
 - [ ] 老壁纸里几张原生宽度不到 2560（`ba-desktop-01` 只有 1920、`ba-desktop-06` 是 2000），
   在 2560 宽的屏上首屏大图会被 `object-fit: cover` 拉伸变糊；有空重导或换掉
 - [ ] OpenAI 那条 AI 画图的路依然不通：需要账号有额度（目前没有），且代理出口要在受支持地区（香港节点会被拒）

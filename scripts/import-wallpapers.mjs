@@ -20,7 +20,15 @@ import { mkdir, readdir, rm, stat } from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
 
-const SRC = path.resolve(process.argv[2] ?? process.env.WALLPAPER_SRC ?? "D:/wallpapers");
+const ARGS = process.argv.slice(2);
+/**
+ * `--append`：追加模式。默认行为是「清掉已有 ba-*、从 01 重新编号」，
+ * 那是为了整目录重新导入时不留垃圾文件；但如果你只是新加了几张图、
+ * 放在别的文件夹里想接在后面，就得用追加模式，否则老图全被顶掉。
+ */
+const APPEND = ARGS.includes("--append");
+const srcArg = ARGS.find((arg) => !arg.startsWith("--"));
+const SRC = path.resolve(srcArg ?? process.env.WALLPAPER_SRC ?? "D:/wallpapers");
 const OUT_DESKTOP = path.resolve("public/wallpaper/desktop");
 const OUT_MOBILE = path.resolve("public/wallpaper/mobile");
 
@@ -30,11 +38,13 @@ async function main() {
 	await mkdir(OUT_DESKTOP, { recursive: true });
 	await mkdir(OUT_MOBILE, { recursive: true });
 
-	// 先清掉上一次导入的产物，避免编号错乱留下垃圾文件
-	for (const dir of [OUT_DESKTOP, OUT_MOBILE]) {
-		for (const entry of await readdir(dir)) {
-			if (/^ba-(desktop|mobile)-\d+\.avif$/.test(entry)) {
-				await rm(path.join(dir, entry), { force: true });
+	// 先清掉上一次导入的产物，避免编号错乱留下垃圾文件（追加模式跳过）
+	if (!APPEND) {
+		for (const dir of [OUT_DESKTOP, OUT_MOBILE]) {
+			for (const entry of await readdir(dir)) {
+				if (/^ba-(desktop|mobile)-\d+\.avif$/.test(entry)) {
+					await rm(path.join(dir, entry), { force: true });
+				}
 			}
 		}
 	}
@@ -58,6 +68,15 @@ async function main() {
 	const desktop = [];
 	const mobile = [];
 	let index = 0;
+
+	if (APPEND) {
+		const existing = (await readdir(OUT_DESKTOP)).filter((name) => /^ba-desktop-\d+\.avif$/.test(name));
+		index = existing.reduce((max, name) => {
+			const number = Number(name.match(/ba-desktop-(\d+)\.avif/)?.[1] ?? 0);
+			return Math.max(max, number);
+		}, 0);
+		console.log(`追加模式：已有 ${index} 张，从 ${index + 1} 开始编号`);
+	}
 
 	for (const file of files) {
 		const meta = await sharp(file).metadata();

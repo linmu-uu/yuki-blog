@@ -17,7 +17,7 @@
  * 用法：npm run wallpapers:ai
  */
 
-import { mkdir, readdir, rm, stat, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
 
@@ -169,7 +169,14 @@ for (const name of entries) {
 	);
 }
 
-await writeFile(SIZES_FILE, `${JSON.stringify(sizes, null, "\t")}\n`, "utf8");
+// 合并写回：这张表里还有 ba-* 的条目（由 wallpapers:sizes 生成），别整体覆盖掉
+let existingSizes: Record<string, unknown> = {};
+try {
+	existingSizes = JSON.parse(await readFile(SIZES_FILE, "utf8"));
+} catch {
+	// 还没有这个文件就从头建
+}
+await writeFile(SIZES_FILE, `${JSON.stringify({ ...existingSizes, ...sizes }, null, "\t")}\n`, "utf8");
 
 console.log(`\n处理完成：${index} 张 → public/wallpaper/
 尺寸表已写入：${path.relative(process.cwd(), SIZES_FILE)}
