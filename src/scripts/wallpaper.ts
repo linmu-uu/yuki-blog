@@ -301,11 +301,8 @@ function applyMotion(entry: WallpaperEntry | undefined) {
 	if (button) {
 		button.setAttribute("aria-pressed", String(enabled));
 		const label = button.querySelector<HTMLElement>("[data-motion-label]");
-		// 文案写「点了会怎样」，别写当前状态 —— 状态可以靠图标和 aria-pressed 表达
-		if (label) label.textContent = enabled ? "暂停动效" : "播放动效";
-		button.title = enabled
-			? "这张壁纸是动态的，正在播放。点一下切成静态图（省流量、省电）"
-			: "点一下播放动态壁纸（会下载一段短视频，约 1–3MB）";
+		if (label) label.textContent = enabled ? "动态壁纸" : "静态壁纸";
+		button.title = enabled ? "点一下换成静态壁纸" : "点一下播放动态壁纸";
 	}
 
 	/*
