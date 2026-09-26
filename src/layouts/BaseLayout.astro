@@ -153,11 +153,18 @@ const themeCss = [
 				const raw = new URLSearchParams(window.location.search).get("wallpaper");
 				// 注意：没有这个参数时 get 返回 null，而 Number(null) === 0，会被误当成「指定第 0 张」
 				const forced = raw === null ? Number.NaN : Number(raw);
-				// 同一趟会话里已经挑过就沿用（换成别的页面时配色才不会跳）
+				/*
+				 * 只有浏览器「后退 / 前进」时才沿用上一步那张 ——
+				 * 正常打开和按 F5 都要重新随机，否则用户会觉得「壁纸不会换」。
+				 * 站内切页的配色一致性靠 wallpaper.ts 的模块状态 + applyTheme 保证，不靠这里。
+				 */
 				let saved = Number.NaN;
 				try {
-					const stored = window.sessionStorage.getItem("yuki:wallpaper-index");
-					if (stored !== null) saved = Number(stored);
+					const navType = performance.getEntriesByType("navigation")[0]?.type ?? "";
+					if (navType === "back_forward") {
+						const stored = window.sessionStorage.getItem("yuki:wallpaper-index");
+						if (stored !== null) saved = Number(stored);
+					}
 				} catch {
 					// 隐私模式读不了，随机即可
 				}

@@ -21,7 +21,7 @@
 ## 二、当前状态快照（2026-09-24）
 
 - 主站：**11 篇文章**、搜索索引 54634 字；构建 **21 个页面**约 1.5 秒；工作区干净
-- 主站线上版本：`bd326121-4211-4e51-a852-ad0c2c6b4f22`（Worker 名 `firefly`；第四轮部署十五次：… → 视频壁纸按硬指标重筛 + 修切页配色断层 → 追加 3 张星铁）
+- 主站线上版本：`eef42528-8150-4629-acf1-c75929300835`（Worker 名 `firefly`；第四轮部署十六次：… → 追加 3 张星铁 → 修「刷新不换壁纸」）
 - **动态壁纸（2026-09-26）**：`mv-*` **14 张，全部是二次元**（主人要求：只要二次元 + 成色好的），
   来源是壁纸引擎创意工坊（`D:\uuuj\steamapps\workshop\content\431960`，库里 167 个视频型 / 269 个场景型）
   - 桌面母版 **2560 宽**（CRF 27 + `-tune animation`，时长默认 7s、无音轨、faststart）、手机 1280 宽
@@ -276,8 +276,12 @@ const forced = raw === null ? Number.NaN : Number(raw);
 症状：首页配色跟着壁纸变，切到归档/相册就变回构建时那一版，视觉上很割裂。
 原因有两个：① `show()` 里 `applyTheme()` 写在「确认有英雄区图片」之后，非首页直接 return 了；
 ② head 里的挑选脚本每次硬加载都重新随机，跟模块状态对不上。
-修法：`applyTheme()` 提到图片判断之前；再用 `sessionStorage`（`yuki:wallpaper-index`）记住本次会话用第几张，
-head 脚本优先读它。实测：首页 → 归档 → 相册 → 回首页 → 硬刷关于页，主题色全程 `#408cbf` 不变。
+修法：`applyTheme()` 提到图片判断之前；再用 `sessionStorage`（`yuki:wallpaper-index`）记住本次会话用第几张。
+
+**但这里本喵踩反了一次**：让 head 脚本无脑沿用 sessionStorage 之后，**连按 F5 都还是那一张**，
+主人立刻反馈「壁纸又不会切换了」。正确姿势是——只有 `performance.getEntriesByType("navigation")[0].type === "back_forward"`
+（浏览器后退/前进）才沿用，正常打开和刷新一律重新随机；站内切页的一致性靠模块状态 + `applyTheme()` 保证。
+实测：连续刷新 6 次抽到 6 张不同的；首页 → 归档 → 相册 配色全程一致；页内 3 秒间隔轮换正常。
 
 **32. 预取别跟首屏抢带宽。**
 `astro.config.mjs` 里原来是 `defaultStrategy: "viewport"`：链接一进视口就预取，顶部导航等于页面刚打开
