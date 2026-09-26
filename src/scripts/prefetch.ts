@@ -75,8 +75,15 @@ export function initPrefetch() {
 		}
 	};
 
-	// 等首屏（含壁纸）忙完再开始，别抢 LCP 的带宽
-	const start = () => window.setTimeout(() => void run(), 500);
+	// 等首屏（含壁纸）彻底忙完、浏览器空闲了再开始，别抢 LCP 的带宽。
+	// 原来固定 500ms，实测经常和首屏大图的下半程重叠。
+	const start = () => {
+		const idle = (window as unknown as {
+			requestIdleCallback?: (cb: () => void, options?: { timeout?: number }) => void;
+		}).requestIdleCallback;
+		if (typeof idle === "function") idle(() => void run(), { timeout: 3000 });
+		else window.setTimeout(() => void run(), 1200);
+	};
 	if (document.readyState === "complete") start();
 	else window.addEventListener("load", start, { once: true });
 }

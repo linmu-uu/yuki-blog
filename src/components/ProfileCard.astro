@@ -14,7 +14,7 @@ const tagCount = new Set(allPosts.flatMap((post) => post.data.tags)).size;
 
 <section class="card profile" data-reveal>
 	<div class="profile__avatar">
-		<img src={site.avatar} alt={`${site.author} 的头像`} width="96" height="96" />
+		<img src={site.avatar} alt={`${site.author} 的头像`} width="96" height="96" loading="lazy" decoding="async" />
 	</div>
 	<h2 class="profile__name">{site.author}</h2>
 	<p class="profile__bio">{site.bio}</p>

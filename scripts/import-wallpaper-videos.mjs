@@ -38,10 +38,16 @@ const flagValues = (name, fallback) => {
 	const index = argv.indexOf(name);
 	return index >= 0 && argv[index + 1] ? argv[index + 1] : fallback;
 };
-const DURATION = Number(flagValues("--duration", "10"));
-const WIDTH = Number(flagValues("--width", "1920"));
+const DURATION = Number(flagValues("--duration", "7"));
+/*
+ * 桌面 2560 宽：主人的屏是 2560×1600 @150%，首屏大图要 2560 设备像素；
+ * 早先压 1920 会被浏览器放大 1.33 倍看得很糊。CRF 26 + tune animation 是
+ * 画质/体积的折中点（实测 4K 源 6 秒 ≈ 2.2MB）。
+ */
+const WIDTH = Number(flagValues("--width", "2560"));
 const MOBILE_WIDTH = Number(flagValues("--mobile-width", "1280"));
-const CRF = Number(flagValues("--crf", "30"));
+const CRF = Number(flagValues("--crf", "27"));
+const RESET = argv.includes("--reset");
 
 /** 收集要处理的源：--we 给的工坊 id，或者命令行里的目录 */
 const workshopIds = [];
@@ -102,6 +108,20 @@ try {
 	// 第一次跑，还没有清单
 }
 
+// --reset：清掉已有的视频、海报和清单，整批重来（换编码参数时用这个）
+if (RESET) {
+	const { rm } = await import("node:fs/promises");
+	for (const dir of [OUT_VIDEO, OUT_DESKTOP, OUT_MOBILE]) {
+		for (const name of await readdir(dir).catch(() => [])) {
+			if (name.startsWith("mv-") || /^poster-\d+\.png$/.test(name)) {
+				await rm(path.join(dir, name), { force: true });
+			}
+		}
+	}
+	manifest = {};
+	console.log("--reset：已清空旧的视频 / 海报 / 清单，从 01 重新编号");
+}
+
 // 编号接着现有的往后排，方便反复追加
 const existing = await readdir(OUT_VIDEO).catch(() => []);
 let index = existing.reduce((max, name) => {
@@ -135,8 +155,9 @@ for (const { file, title, source } of sources) {
 		"-i", file,
 		"-t", String(seconds),
 		"-an",
-		"-vf", `scale=${WIDTH}:-2:flags=lanczos,fps=30`,
-		"-c:v", "libx264", "-preset", "slow", "-crf", String(CRF),
+		// 输出宽度取「目标宽度」和「源宽度」里小的那个：1080p 的源不硬放大
+		"-vf", `scale='min(${WIDTH},iw)':-2:flags=lanczos,fps=30`,
+		"-c:v", "libx264", "-preset", "slow", "-crf", String(CRF), "-tune", "animation",
 		"-pix_fmt", "yuv420p",
 		"-movflags", "+faststart",
 		desktopVideo,
@@ -148,8 +169,8 @@ for (const { file, title, source } of sources) {
 		"-i", file,
 		"-t", String(seconds),
 		"-an",
-		"-vf", `scale=${MOBILE_WIDTH}:-2:flags=lanczos,fps=30`,
-		"-c:v", "libx264", "-preset", "slow", "-crf", String(CRF + 2),
+		"-vf", `scale='min(${MOBILE_WIDTH},iw)':-2:flags=lanczos,fps=30`,
+		"-c:v", "libx264", "-preset", "slow", "-crf", String(CRF + 3), "-tune", "animation",
 		"-pix_fmt", "yuv420p",
 		"-movflags", "+faststart",
 		mobileVideo,

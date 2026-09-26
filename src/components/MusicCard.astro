@@ -6,7 +6,7 @@ import { site } from "../data/site";
 	<h2 class="section-title">{site.music.title}</h2>
 
 	<div class="music__player">
-		<img class="music__cover" data-cover src={site.music.cover} alt="封面" width="56" height="56" />
+		<img class="music__cover" data-cover src={site.music.cover} alt="封面" width="56" height="56" loading="lazy" decoding="async" />
 		<div class="music__meta">
 			<span class="music__track" data-title>点播放开始听</span>
 			<span class="music__time" data-time>00:00 / 00:00</span>
@@ -276,11 +276,31 @@ import { site } from "../data/site";
 		const bar = card.querySelector<HTMLElement>("[data-bar]");
 		const progress = card.querySelector<HTMLElement>("[data-progress]");
 
-		// 有远程歌单的话，等用户「想听」的时候再去拉
+		/*
+		 * 有远程歌单的话，等音乐卡快滚进视口再去拉：
+		 * 一次跨境的歌单请求 + 封面图，别跟首屏大图抢带宽（卡片本来就在首屏下面）。
+		 */
 		if (site.music.api && !remoteRequested) {
-			remoteRequested = true;
-			warmUpMusic();
-			void loadRemotePlaylist(site.music.api, site.music.cover);
+			const startRemote = () => {
+				if (remoteRequested) return;
+				remoteRequested = true;
+				warmUpMusic();
+				void loadRemotePlaylist(site.music.api, site.music.cover);
+			};
+
+			if ("IntersectionObserver" in window) {
+				const observer = new IntersectionObserver(
+					(entries) => {
+						if (!entries.some((entry) => entry.isIntersecting)) return;
+						observer.disconnect();
+						startRemote();
+					},
+					{ rootMargin: "400px 0px" },
+				);
+				observer.observe(card);
+			} else {
+				startRemote();
+			}
 		}
 
 		if (card.dataset.bound !== "1") {

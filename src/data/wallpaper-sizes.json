@@ -281,7 +281,7 @@
 		]
 	},
 	"/wallpaper/desktop/mv-desktop-03.avif": {
-		"width": 1920,
+		"width": 2560,
 		"candidates": [
 			{
 				"src": "/wallpaper/desktop/mv-desktop-03-1600.avif",
@@ -289,7 +289,150 @@
 			},
 			{
 				"src": "/wallpaper/desktop/mv-desktop-03.avif",
+				"w": 2560
+			}
+		]
+	},
+	"/wallpaper/desktop/mv-desktop-04.avif": {
+		"width": 2560,
+		"candidates": [
+			{
+				"src": "/wallpaper/desktop/mv-desktop-04-1600.avif",
+				"w": 1600
+			},
+			{
+				"src": "/wallpaper/desktop/mv-desktop-04.avif",
+				"w": 2560
+			}
+		]
+	},
+	"/wallpaper/desktop/mv-desktop-05.avif": {
+		"width": 2560,
+		"candidates": [
+			{
+				"src": "/wallpaper/desktop/mv-desktop-05-1600.avif",
+				"w": 1600
+			},
+			{
+				"src": "/wallpaper/desktop/mv-desktop-05.avif",
+				"w": 2560
+			}
+		]
+	},
+	"/wallpaper/desktop/mv-desktop-06.avif": {
+		"width": 2560,
+		"candidates": [
+			{
+				"src": "/wallpaper/desktop/mv-desktop-06-1600.avif",
+				"w": 1600
+			},
+			{
+				"src": "/wallpaper/desktop/mv-desktop-06.avif",
+				"w": 2560
+			}
+		]
+	},
+	"/wallpaper/desktop/mv-desktop-07.avif": {
+		"width": 2560,
+		"candidates": [
+			{
+				"src": "/wallpaper/desktop/mv-desktop-07-1600.avif",
+				"w": 1600
+			},
+			{
+				"src": "/wallpaper/desktop/mv-desktop-07.avif",
+				"w": 2560
+			}
+		]
+	},
+	"/wallpaper/desktop/mv-desktop-08.avif": {
+		"width": 2560,
+		"candidates": [
+			{
+				"src": "/wallpaper/desktop/mv-desktop-08-1600.avif",
+				"w": 1600
+			},
+			{
+				"src": "/wallpaper/desktop/mv-desktop-08.avif",
+				"w": 2560
+			}
+		]
+	},
+	"/wallpaper/desktop/mv-desktop-09.avif": {
+		"width": 2560,
+		"candidates": [
+			{
+				"src": "/wallpaper/desktop/mv-desktop-09-1600.avif",
+				"w": 1600
+			},
+			{
+				"src": "/wallpaper/desktop/mv-desktop-09.avif",
+				"w": 2560
+			}
+		]
+	},
+	"/wallpaper/desktop/mv-desktop-10.avif": {
+		"width": 1920,
+		"candidates": [
+			{
+				"src": "/wallpaper/desktop/mv-desktop-10-1600.avif",
+				"w": 1600
+			},
+			{
+				"src": "/wallpaper/desktop/mv-desktop-10.avif",
 				"w": 1920
+			}
+		]
+	},
+	"/wallpaper/desktop/mv-desktop-11.avif": {
+		"width": 2560,
+		"candidates": [
+			{
+				"src": "/wallpaper/desktop/mv-desktop-11-1600.avif",
+				"w": 1600
+			},
+			{
+				"src": "/wallpaper/desktop/mv-desktop-11.avif",
+				"w": 2560
+			}
+		]
+	},
+	"/wallpaper/desktop/mv-desktop-12.avif": {
+		"width": 2560,
+		"candidates": [
+			{
+				"src": "/wallpaper/desktop/mv-desktop-12-1600.avif",
+				"w": 1600
+			},
+			{
+				"src": "/wallpaper/desktop/mv-desktop-12.avif",
+				"w": 2560
+			}
+		]
+	},
+	"/wallpaper/desktop/mv-desktop-13.avif": {
+		"width": 2560,
+		"candidates": [
+			{
+				"src": "/wallpaper/desktop/mv-desktop-13-1600.avif",
+				"w": 1600
+			},
+			{
+				"src": "/wallpaper/desktop/mv-desktop-13.avif",
+				"w": 2560
+			}
+		]
+	},
+	"/wallpaper/desktop/mv-desktop-14.avif": {
+		"width": 2560,
+		"candidates": [
+			{
+				"src": "/wallpaper/desktop/mv-desktop-14-1600.avif",
+				"w": 1600
+			},
+			{
+				"src": "/wallpaper/desktop/mv-desktop-14.avif",
+				"w": 2560
 			}
 		]
 	},

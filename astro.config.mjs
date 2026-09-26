@@ -3,15 +3,15 @@ import { defineConfig } from "astro/config";
 export default defineConfig({
 	site: "https://yuki666.online",
 	/*
-	 * 预取：鼠标移到导航/链接上（或链接进入视口）时，提前把目标页面的 HTML 抓回来。
-	 * Astro 的 ClientRouter 会直接复用这份预取结果，切换栏目基本就是「瞬间换」，
-	 * 不会再出现点一下先卡半秒的情况。
+	 * 预取分两层：
+	 *   - Astro 自带的这层用 hover：鼠标碰上链接才抓目标页，点下去基本已经就绪；
+	 *   - 整站预取交给 src/scripts/prefetch.ts（load 之后空闲时小并发自己抓）。
+	 * 之前这里写的是 viewport：链接一进视口就抓，顶部导航等于页面刚打开就触发 8 个跨境请求，
+	 * 直接跟首屏大图抢带宽（Lighthouse 手机预设下 LCP 被拖到 2.2s）。
 	 */
 	prefetch: {
 		prefetchAll: true,
-		/* 链接一进入视口就预取：顶部导航永远在视口里，等于页面一加载就把栏目页拿到手，
-		   点过去几乎不用等 —— 这是「不卡」最有效的一招 */
-		defaultStrategy: "viewport",
+		defaultStrategy: "hover",
 	},
 	build: {
 		inlineStylesheets: "auto",

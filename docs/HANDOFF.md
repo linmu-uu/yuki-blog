@@ -21,10 +21,13 @@
 ## 二、当前状态快照（2026-09-24）
 
 - 主站：**11 篇文章**、搜索索引 54634 字；构建 **21 个页面**约 1.5 秒；工作区干净
-- 主站线上版本：`7c443aa1-b8fd-4c14-8835-79678e28c2b7`（Worker 名 `firefly`；第四轮部署十次：… → 追加壁纸 → 动态壁纸 → 修 `Number(null)`）
-- **动态壁纸（2026-09-26 新增）**：`mv-*` 3 张，视频来自壁纸引擎创意工坊（`D:\uuuj\steamapps\workshop\content\431960`），
-  桌面 1920 宽 / 手机 1280 宽、无音轨、~5s 循环；海报（静态 AVIF）走原管线，手机 / 省流 / 减弱动效的用户只下海报，
-  英雄区右下角有「动态壁纸 / 静态壁纸」开关（localStorage 记住），清单在 `src/data/wallpaper-videos.json`
+- 主站线上版本：`6467f254-07d2-45f9-857f-57631ee24d51`（Worker 名 `firefly`；第四轮部署十二次：… → 动态壁纸 → 修 `Number(null)` → 视频壁纸精选/画质 + 主题色解锁 + 性能第二轮）
+- **动态壁纸（2026-09-26）**：`mv-*` **14 张，全部是二次元**（主人要求：只要二次元 + 成色好的），
+  来源是壁纸引擎创意工坊（`D:\uuuj\steamapps\workshop\content\431960`，库里 167 个视频型 / 269 个场景型）
+  - 桌面母版 **2560 宽**（CRF 27 + `-tune animation`，时长默认 7s、无音轨、faststart）、手机 1280 宽
+  - 体积：桌面约 25MB + 手机约 7MB + 海报约 3MB；最重的两张是 `mv-13 流萤花嫁`(4.3MB) 和 `mv-04 黑龙女孩`(3.7MB)
+  - 海报（静态 AVIF）走原管线，手机 / 省流 / 减弱动效的用户只下海报；英雄区右下角有「动态壁纸 / 静态壁纸」开关
+  - 清单：`src/data/wallpaper-videos.json`；场景型（`.pkg` 跑着色器）网页搬不了，只有视频型能用
 - 壁纸轮换：**`ba-*` 13 张 + `ai-*` 4 张**（ai 那组是白子雨夜 / 优香教室 / 星野黄昏 / 三一教堂，母版经 ComfyUI `4x-AnimeSharp` 放大)；桌面母版 1600–3840 不等、手机统一 1080×1920；`srcset` 的真实宽度由 `src/data/wallpaper-sizes.json` 提供（`npm run wallpapers:sizes` 生成，别手改）
 - 线上抽查：真机 Chromium 开首页 12 次，命中 `ai-desktop-03/04` 共 3 次，主题色随壁纸变化正常
 - SEO：全站有 JSON-LD（首页 `WebSite` + 站内搜索框，文章页 `BlogPosting` + `BreadcrumbList`）、
@@ -58,6 +61,7 @@ npm run wallpapers:palette   # 重新提取壁纸配色
 npm run wallpapers:variants  # 生成 1600px 壁纸小图
 npm run wallpapers:sizes     # 重算 srcset 用的真实宽度表（加图 / 导入之后跑一次）
 npm run wallpapers:video -- --we <工坊id> [<id> ...]   # 导入视频壁纸（转码 + 抽海报）
+npm run wallpapers:video -- --reset --we <id> ...      # 整批重导（换编码参数 / 换曲目时用，编号从 01 重排）
 npm run gallery:thumbs       # 生成相册缩略图
 ```
 
@@ -234,6 +238,24 @@ const forced = raw === null ? Number.NaN : Number(raw);
 顺带检查了同文件其它同类写法：`wallpaperInterval` 那个因为还有 `>= 1500` 的下限判断，侥幸没事；
 `motion` 是拿字符串比较，也安全。**这类读参数的代码以后一律先判 null。**
 
+**30. 取色脚本把色相硬夹在「蔚蓝档案蓝」附近 —— 主题色根本不会跟着壁纸换。**
+`extract-palettes.mjs` 里原本有 `HUE_TARGET = 0.585` + 主色只允许 ±27°、辅色 ±43° 的约束，
+本意是「换图也是 BA 蓝」，结果是 12 张来自不同游戏的视频壁纸抽出来**全是 #4045bf / #7d80d4 这类蓝紫**，
+主人一眼就看出来「主题颜色应该可以换一下」。现在只规整饱和度（≥0.5）和亮度（0.5~目标值），色相按图走：
+抽出来从 **8°（红橙）到 256°（紫）**都有。想让主题色别太跳就把 `HUE_SOFT_LIMIT` 调小（0.5 = 不限）。
+
+**31. 视频壁纸要按「屏幕实际需要多少像素」出，不是按常识出。**
+第一版桌面视频压 1920 宽，主人的屏是 2560×1600 @150%，首屏大图要 **2560 设备像素**——
+浏览器把 1920 拉大 1.33 倍，看着就是糊。现在母版 2560 宽（源本来就小的不硬放大），
+配 `-tune animation`（动画向：同码率下线条更干净）和 CRF 27。
+
+**32. 预取别跟首屏抢带宽。**
+`astro.config.mjs` 里原来是 `defaultStrategy: "viewport"`：链接一进视口就预取，顶部导航等于页面刚打开
+就发 8 个跨境请求，跟首屏大图抢带宽。改成 `hover`（鼠标碰上才抓），整站预取交给 `src/scripts/prefetch.ts`，
+并且从「load + 500ms」改成「load + requestIdleCallback」。
+顺手把音乐卡封面 / 个人卡头像改成懒加载、歌单接口改成「卡片快进视口再拉」：
+**首页总字节 436KB → 347KB，LCP 2.2s 不变但带宽余量更大**（分数受本机代理抖动影响，别拿单次结果下结论）。
+
 **28. 视频要等首屏图加载完再下载。**
 一开始 `applyMotion()` 马上 `preload:"auto"` 开下，跟首屏海报抢带宽，
 手机预设下 FCP 2.9s / LCP 3.6s、性能 80 分。改成 `window load` 之后用 `requestIdleCallback`（兜底 800ms）再开始，
@@ -272,7 +294,9 @@ npm run deploy
 - [ ] 百度搜索资源平台**放弃**（2026-09-25）：添加站点反复失败，怀疑是本机代理 fake-ip 干扰 + 无备案在百度抓得极慢，主人决定不做
 - [ ] Lighthouse 剩下的唯一提示是 Twikoo 的 `valid-source-maps`（588KB 的 nocss.js 没带 source map）：
   权重 0，不影响最佳做法满分；真要消掉就得自己托管一份 .map 或者把 vendored 文件换掉
-- [ ] 动态壁纸还能继续加：工坊里还有 160+ 个视频型（`node scripts/import-wallpaper-videos.mjs --we <id>`），
+- [x] 动态壁纸精选（2026-09-26）：**只要二次元 + 成色好**的，14 张已上线；绮良良（人物太小偏风景）、白月魁06（太暗）、
+  MIKU（其实是房间照片不是二次元）都被剔掉了
+- [ ] 动态壁纸还能继续加：工坊里还有 150+ 个视频型（`node scripts/import-wallpaper-videos.mjs --we <id>`），
   单段体积建议压在 2.5MB 以内；`--duration 8 --crf 32` 还能再瘦一圈
 - [ ] 版权提醒：这些是别人上传到创意工坊的作品，清单里存了 `source: workshop:<id>` 做来源标注。
   自己博客上放着看没大问题，**别拿去做商用或二次分发**

@@ -68,24 +68,25 @@ function hslToHex(h, s, l) {
 }
 
 /**
- * 蔚蓝档案主色调约束
+ * 色相策略：**按壁纸自己的主色走**。
  *
- * 壁纸的色相跨度可能很大（暖橙、粉红、青绿都有），全部硬夹成蓝会让每张图看起来都一样。
- * 所以按角色分层放权，但整体收在蔚蓝档案的调性里：
- *   - 主色：±27°（守紧一点，换图也是 BA 蓝）
- *   - 辅色：±43°，青 / 紫还能看出差别
- *   - 点缀色（accent-3 / 光环）：±65°，暖色点缀不至于完全没有
- * 想更保守 / 更放开，就改下面这三个数（单位是色相环上的比例，1 = 360°）。
+ * 这里原本把色相硬夹在「蔚蓝档案蓝」附近（主色只允许 ±27°），本意是「换图也是 BA 蓝」，
+ * 但结果是——不管换成哪个游戏的壁纸，主题色永远是一坨蓝紫（12 张视频壁纸抽出来全是
+ * #4045bf / #7d80d4 这类），等于主题色根本没跟着壁纸换。
+ *
+ * 现在只规整**饱和度和亮度**，保证深色底上够亮够清楚，色相原样保留：
+ *   - 饱和度抬到 0.5 以上，不然灰扑扑的不好看
+ *   - 亮度夹在 0.5 到目标值之间，太暗当强调色会看不清
+ * 想让主题色别太跳，就把 HUE_SOFT_LIMIT 调小（0.5 = 不限，0.08 ≈ ±29°）。
  */
-const HUE_TARGET = 0.585;
+const HUE_TARGET = 0.585; // 只有在整张图找不出任何有色像素时才用它兜底
 
-const HUE_LIMITS = {
-	primary: 0.075, // ≈27°
-	secondary: 0.12, // ≈43°
-	tertiary: 0.18, // ≈65°
-};
+/** 0.5 = 完全不限制色相；想收窄就调小（单位是色相环比例） */
+const HUE_SOFT_LIMIT = 0.5;
 
-function constrainHue(h, limit) {
+function constrainHue(h, limit = HUE_SOFT_LIMIT) {
+	if (limit >= 0.5) return h;
+
 	let diff = h - HUE_TARGET;
 	if (diff > 0.5) diff -= 1;
 	if (diff < -0.5) diff += 1;
@@ -145,10 +146,10 @@ async function analyse(file) {
 		.filter((item) => item.count > 8)
 		.sort((a, b) => b.score - a.score);
 
-	const normalise = (color, targetSat, targetLum, hueLimit) => {
+	const normalise = (color, targetSat, targetLum) => {
 		const { h, s, l } = rgbToHsl(...color);
 		return hslToHex(
-			constrainHue(h, hueLimit),
+			constrainHue(h),
 			clamp(s * 1.35, 0.5, targetSat),
 			clamp(l, 0.5, targetLum),
 		);
@@ -188,12 +189,12 @@ async function analyse(file) {
 		);
 	};
 
-	const accent = primary ? normalise(primary.color, 0.94, 0.66, HUE_LIMITS.primary) : "#3b9bff";
+	const accent = primary ? normalise(primary.color, 0.94, 0.66) : "#3b9bff";
 	const accent2 = secondary
-		? normalise(secondary.color, 0.9, 0.74, HUE_LIMITS.secondary)
+		? normalise(secondary.color, 0.9, 0.74)
 		: derive(accent, 0.05, 0.85, 0.8);
 	const accent3 = tertiary
-		? normalise(tertiary.color, 0.92, 0.8, HUE_LIMITS.tertiary)
+		? normalise(tertiary.color, 0.92, 0.8)
 		: lighten(derive(accent, -0.05, 0.8, 0.88), 0.12);
 
 	const brightness = lumSum / Math.max(pixels, 1);

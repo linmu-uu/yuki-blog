@@ -6,8 +6,8 @@
 		"desktop": "/wallpaper/video/mv-desktop-01.mp4",
 		"mobile": "/wallpaper/video/mv-mobile-01.mp4",
 		"bytes": {
-			"desktop": 1916231,
-			"mobile": 803481
+			"desktop": 2079142,
+			"mobile": 807089
 		}
 	},
 	"/wallpaper/desktop/mv-desktop-02.avif": {
@@ -17,19 +17,140 @@
 		"desktop": "/wallpaper/video/mv-desktop-02.mp4",
 		"mobile": "/wallpaper/video/mv-mobile-02.mp4",
 		"bytes": {
-			"desktop": 186483,
-			"mobile": 84922
+			"desktop": 190627,
+			"mobile": 91813
 		}
 	},
 	"/wallpaper/desktop/mv-desktop-03.avif": {
-		"title": "【七柒】绮良良动态壁纸KIRARA",
-		"source": "workshop:3016249513",
-		"duration": 5,
+		"title": "Lycoris Recoil_莉可丽丝",
+		"source": "workshop:2975569956",
+		"duration": 7,
 		"desktop": "/wallpaper/video/mv-desktop-03.mp4",
 		"mobile": "/wallpaper/video/mv-mobile-03.mp4",
 		"bytes": {
-			"desktop": 567326,
-			"mobile": 162229
+			"desktop": 2322976,
+			"mobile": 525101
+		}
+	},
+	"/wallpaper/desktop/mv-desktop-04.avif": {
+		"title": "黑龙女孩",
+		"source": "workshop:3013892332",
+		"duration": 6.17,
+		"desktop": "/wallpaper/video/mv-desktop-04.mp4",
+		"mobile": "/wallpaper/video/mv-mobile-04.mp4",
+		"bytes": {
+			"desktop": 3915426,
+			"mobile": 1027182
+		}
+	},
+	"/wallpaper/desktop/mv-desktop-05.avif": {
+		"title": "【崩坏：星穹铁道】星核猎手",
+		"source": "workshop:3019949843",
+		"duration": 4.4,
+		"desktop": "/wallpaper/video/mv-desktop-05.mp4",
+		"mobile": "/wallpaper/video/mv-mobile-05.mp4",
+		"bytes": {
+			"desktop": 486836,
+			"mobile": 131250
+		}
+	},
+	"/wallpaper/desktop/mv-desktop-06.avif": {
+		"title": "Photographers",
+		"source": "workshop:3255150854",
+		"duration": 7,
+		"desktop": "/wallpaper/video/mv-desktop-06.mp4",
+		"mobile": "/wallpaper/video/mv-mobile-06.mp4",
+		"bytes": {
+			"desktop": 2164190,
+			"mobile": 588746
+		}
+	},
+	"/wallpaper/desktop/mv-desktop-07.avif": {
+		"title": "Anime Girl Nekoha Shizuku (60 fps) (4k)",
+		"source": "workshop:2435488627",
+		"duration": 5.57,
+		"desktop": "/wallpaper/video/mv-desktop-07.mp4",
+		"mobile": "/wallpaper/video/mv-mobile-07.mp4",
+		"bytes": {
+			"desktop": 372557,
+			"mobile": 86308
+		}
+	},
+	"/wallpaper/desktop/mv-desktop-08.avif": {
+		"title": "库莉姆Cream 病弱人偶",
+		"source": "workshop:3400422354",
+		"duration": 7,
+		"desktop": "/wallpaper/video/mv-desktop-08.mp4",
+		"mobile": "/wallpaper/video/mv-mobile-08.mp4",
+		"bytes": {
+			"desktop": 2230308,
+			"mobile": 648505
+		}
+	},
+	"/wallpaper/desktop/mv-desktop-09.avif": {
+		"title": "战双——露西亚",
+		"source": "workshop:3175262275",
+		"duration": 4.02,
+		"desktop": "/wallpaper/video/mv-desktop-09.mp4",
+		"mobile": "/wallpaper/video/mv-mobile-09.mp4",
+		"bytes": {
+			"desktop": 484221,
+			"mobile": 142774
+		}
+	},
+	"/wallpaper/desktop/mv-desktop-10.avif": {
+		"title": "佐助",
+		"source": "workshop:1221048209",
+		"duration": 7,
+		"desktop": "/wallpaper/video/mv-desktop-10.mp4",
+		"mobile": "/wallpaper/video/mv-mobile-10.mp4",
+		"bytes": {
+			"desktop": 1516841,
+			"mobile": 507787
+		}
+	},
+	"/wallpaper/desktop/mv-desktop-11.avif": {
+		"title": "空崎日奈",
+		"source": "workshop:3411591618",
+		"duration": 7,
+		"desktop": "/wallpaper/video/mv-desktop-11.mp4",
+		"mobile": "/wallpaper/video/mv-mobile-11.mp4",
+		"bytes": {
+			"desktop": 1219753,
+			"mobile": 302627
+		}
+	},
+	"/wallpaper/desktop/mv-desktop-12.avif": {
+		"title": "胡桃 - 4K",
+		"source": "workshop:2596768083",
+		"duration": 7,
+		"desktop": "/wallpaper/video/mv-desktop-12.mp4",
+		"mobile": "/wallpaper/video/mv-mobile-12.mp4",
+		"bytes": {
+			"desktop": 2094570,
+			"mobile": 523973
+		}
+	},
+	"/wallpaper/desktop/mv-desktop-13.avif": {
+		"title": "【柠-鸢】流萤花嫁4K",
+		"source": "workshop:3290644366",
+		"duration": 7,
+		"desktop": "/wallpaper/video/mv-desktop-13.mp4",
+		"mobile": "/wallpaper/video/mv-mobile-13.mp4",
+		"bytes": {
+			"desktop": 4471522,
+			"mobile": 1053740
+		}
+	},
+	"/wallpaper/desktop/mv-desktop-14.avif": {
+		"title": "2K-60FPS赛博朋克-边缘行者 · 露西",
+		"source": "workshop:2890459220",
+		"duration": 7,
+		"desktop": "/wallpaper/video/mv-desktop-14.mp4",
+		"mobile": "/wallpaper/video/mv-mobile-14.mp4",
+		"bytes": {
+			"desktop": 2032575,
+			"mobile": 508110
 		}
 	}
 }
