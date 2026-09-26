@@ -6,7 +6,7 @@ import { site } from "../data/site";
 	<h2 class="section-title">{site.music.title}</h2>
 
 	<div class="music__player">
-		<img class="music__cover" data-cover src={site.music.cover} alt="封面" width="56" height="56" loading="lazy" decoding="async" />
+		<img class="music__cover" data-cover src="/audio/cover-112.webp" alt="封面" width="56" height="56" loading="lazy" decoding="async" />
 		<div class="music__meta">
 			<span class="music__track" data-title>点播放开始听</span>
 			<span class="music__time" data-time>00:00 / 00:00</span>
@@ -285,7 +285,7 @@ import { site } from "../data/site";
 				if (remoteRequested) return;
 				remoteRequested = true;
 				warmUpMusic();
-				void loadRemotePlaylist(site.music.api, site.music.cover);
+				void loadRemotePlaylist(site.music.api, "/audio/cover-112.webp");
 			};
 
 			if ("IntersectionObserver" in window) {

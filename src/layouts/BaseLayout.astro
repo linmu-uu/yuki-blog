@@ -253,7 +253,7 @@ const themeCss = [
 
 			// 有远程歌单（主人自己的 token 链接）就等页面闲下来再拉，不抢首屏带宽
 			if (site.music.api) {
-				const warm = () => void loadRemotePlaylist(site.music.api, site.music.cover);
+				const warm = () => void loadRemotePlaylist(site.music.api, "/audio/cover-112.webp");
 				const idle = (
 					window as unknown as {
 						requestIdleCallback?: (cb: () => void, options?: { timeout: number }) => number;

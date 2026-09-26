@@ -15,7 +15,13 @@ const isSlow = () => {
 		connection?: { saveData?: boolean; effectiveType?: string };
 	}).connection;
 	if (!connection) return false;
-	return Boolean(connection.saveData) || /2g/.test(connection.effectiveType ?? "");
+	/*
+	 * 2g / 3g / 省流量模式都别预取：
+	 * 实测 Lighthouse 手机预设（1.6Mbps）下，8 个页面的预取请求加起来 ~160KB，
+	 * 全都在跟首屏大图抢带宽，LCP 直接被拖慢。4g / wifi 上照常预取，切换依然秒开。
+	 */
+	if (connection.saveData) return true;
+	return /slow-2g|2g|3g/.test(connection.effectiveType ?? "");
 };
 
 // 收集站内链接（跳过当前页、外链、锚点）
@@ -75,15 +81,49 @@ export function initPrefetch() {
 		}
 	};
 
-	// 等首屏（含壁纸）彻底忙完、浏览器空闲了再开始，别抢 LCP 的带宽。
-	// 原来固定 500ms，实测经常和首屏大图的下半程重叠。
+	/*
+	 * 等首屏大图（LCP）真的画完再开始预取，别跟它抢带宽。
+	 * 用 PerformanceObserver 盯 LCP：每次有新候选就重新计时，静默 800ms 才动手；
+	 * 兜底 4 秒（老浏览器 / 没有 LCP 条目的情况）。
+	 * 之前的写法是 load + requestIdleCallback，实测在慢网络下仍会和 LCP 的下半程重叠。
+	 */
 	const start = () => {
 		const idle = (window as unknown as {
 			requestIdleCallback?: (cb: () => void, options?: { timeout?: number }) => void;
 		}).requestIdleCallback;
-		if (typeof idle === "function") idle(() => void run(), { timeout: 3000 });
-		else window.setTimeout(() => void run(), 1200);
+		if (typeof idle === "function") idle(() => void run(), { timeout: 2000 });
+		else void run();
 	};
-	if (document.readyState === "complete") start();
-	else window.addEventListener("load", start, { once: true });
+
+	const waitForLcpQuiet = () => {
+		if (!("PerformanceObserver" in window)) {
+			window.setTimeout(start, 2500);
+			return;
+		}
+
+		let timer = 0;
+		let started = false;
+		const begin = () => {
+			if (started) return;
+			started = true;
+			window.clearTimeout(timer);
+			observer.disconnect();
+			start();
+		};
+		const observer = new PerformanceObserver(() => {
+			window.clearTimeout(timer);
+			timer = window.setTimeout(begin, 800);
+		});
+		try {
+			observer.observe({ type: "largest-contentful-paint", buffered: true });
+		} catch {
+			begin();
+			return;
+		}
+		// 兜底：4 秒还没静默也开工
+		window.setTimeout(begin, 4000);
+	};
+
+	if (document.readyState === "complete") waitForLcpQuiet();
+	else window.addEventListener("load", waitForLcpQuiet, { once: true });
 }
