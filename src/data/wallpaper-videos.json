@@ -1,0 +1,35 @@
+{
+	"/wallpaper/desktop/mv-desktop-01.avif": {
+		"title": "小鸟游六花",
+		"source": "workshop:845482931",
+		"duration": 5.04,
+		"desktop": "/wallpaper/video/mv-desktop-01.mp4",
+		"mobile": "/wallpaper/video/mv-mobile-01.mp4",
+		"bytes": {
+			"desktop": 1916231,
+			"mobile": 803481
+		}
+	},
+	"/wallpaper/desktop/mv-desktop-02.avif": {
+		"title": "猫羽雫nya",
+		"source": "workshop:2072422945",
+		"duration": 6,
+		"desktop": "/wallpaper/video/mv-desktop-02.mp4",
+		"mobile": "/wallpaper/video/mv-mobile-02.mp4",
+		"bytes": {
+			"desktop": 186483,
+			"mobile": 84922
+		}
+	},
+	"/wallpaper/desktop/mv-desktop-03.avif": {
+		"title": "【七柒】绮良良动态壁纸KIRARA",
+		"source": "workshop:3016249513",
+		"duration": 5,
+		"desktop": "/wallpaper/video/mv-desktop-03.mp4",
+		"mobile": "/wallpaper/video/mv-mobile-03.mp4",
+		"bytes": {
+			"desktop": 567326,
+			"mobile": 162229
+		}
+	}
+}

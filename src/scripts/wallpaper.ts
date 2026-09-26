@@ -8,11 +8,20 @@
  * - 拿不到清单（禁用 JS）时保留构建时烘焙好的那一张
  */
 
+interface MotionVideo {
+	desktop: string;
+	mobile: string;
+	title?: string;
+	bytes?: { desktop?: number; mobile?: number };
+}
+
 interface WallpaperEntry {
 	src: string;
 	srcSet: string;
 	vars: string;
 	brightness: number;
+	/** 这一张同时有视频版（动态壁纸），没写就是纯静态 */
+	video?: MotionVideo;
 }
 
 interface WallpaperManifest {
@@ -150,6 +159,7 @@ function show(manifest: WallpaperManifest, index: number, fade: boolean) {
 	if (!fade || !currentSrc) {
 		commit();
 		applyTheme(active.vars);
+		afterShow(manifest, active);
 		return;
 	}
 
@@ -165,6 +175,7 @@ function show(manifest: WallpaperManifest, index: number, fade: boolean) {
 	const finish = () => {
 		commit();
 		applyTheme(active.vars);
+		afterShow(manifest, active);
 		window.setTimeout(() => layer.remove(), 1300);
 	};
 
@@ -177,6 +188,197 @@ function show(manifest: WallpaperManifest, index: number, fade: boolean) {
 	layer.addEventListener("error", () => layer.remove());
 
 	img.parentElement?.appendChild(layer);
+}
+
+/* ----------------------- 动态壁纸（视频） ----------------------- */
+
+/**
+ * 视频壁纸的设计原则：**永远先有静态图**。
+ *
+ * - 海报（静态 AVIF）走原来的管线，首屏、主题配色、缓存策略都不变
+ * - 只有满足条件才额外下载视频，盖在图片上层淡入
+ * - 手机默认不播（流量贵），系统开了「减弱动效」不播，省流量模式 / 2G-3G 不播
+ * - 用户可以用英雄区那个按钮手动开关，选择存在 localStorage
+ * - 切到后台标签页暂停解码，省电
+ */
+
+const MOTION_KEY = "yuki:motion";
+let videoEl: HTMLVideoElement | null = null;
+let currentManifest: WallpaperManifest | null = null;
+/** 用来作废「已经排队但还没开始加载」的那次视频启动 */
+let motionToken = "";
+
+/** 浏览器空闲时再执行；没有 requestIdleCallback 就退化成延时 */
+function whenIdle(task: () => void) {
+	const idle = (window as unknown as { requestIdleCallback?: (cb: () => void, options?: { timeout?: number }) => void }).requestIdleCallback;
+	if (typeof idle === "function") idle(task, { timeout: 2500 });
+	else window.setTimeout(task, 800);
+}
+
+/** 用户的显式选择：true = 播，false = 不播，null = 没选过 */
+function motionPreference(): boolean | null {
+	const raw = new URLSearchParams(window.location.search).get("motion");
+	if (raw === "on") return true;
+	if (raw === "off") return false;
+
+	try {
+		const stored = window.localStorage.getItem(MOTION_KEY);
+		if (stored === "on") return true;
+		if (stored === "off") return false;
+	} catch {
+		// 隐私模式下 localStorage 可能不可用
+	}
+	return null;
+}
+
+/** 现在到底该不该播 */
+function motionEnabled(): boolean {
+	const pref = motionPreference();
+	if (pref === false) return false;
+	// 无障碍底线：系统要求减弱动效就别放
+	if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
+	// 复用「省流量 / 2g」的判断（preloadWallpaper 用的同一个）
+	if (!shouldPreload()) return false;
+	if (pref === true) return true;
+	// 没选过：桌面端默认开，手机端等用户自己点
+	return window.matchMedia("(min-width: 769px)").matches;
+}
+
+function videoUrlFor(entry: WallpaperEntry): string {
+	const isMobile = window.matchMedia("(max-width: 768px)").matches;
+	return (isMobile ? entry.video?.mobile : entry.video?.desktop) ?? "";
+}
+
+function removeMotion() {
+	if (!videoEl) return;
+	videoEl.pause();
+	// 只把元素摘掉：removeAttribute("src") + load() 会把下载中的请求打断成 ERR_ABORTED，
+	// 紧接着重建同一段视频时可能直接 error，表现为「关了再开回不来」
+	videoEl.remove();
+	videoEl = null;
+	motionToken = "";
+}
+
+/** 换壁纸、点开关、跨断点都会走这里 */
+function applyMotion(entry: WallpaperEntry | undefined) {
+	const button = document.querySelector<HTMLButtonElement>("[data-motion-toggle]");
+	if (button) button.hidden = !entry?.video;
+	if (!entry?.video) {
+		removeMotion();
+		return;
+	}
+
+	const enabled = motionEnabled();
+	if (button) {
+		button.setAttribute("aria-pressed", String(enabled));
+		const label = button.querySelector<HTMLElement>("[data-motion-label]");
+		if (label) label.textContent = enabled ? "动态壁纸" : "静态壁纸";
+		button.title = enabled ? "点一下换成静态壁纸" : "点一下播放动态壁纸";
+	}
+
+	/*
+	 * 关掉开关时只暂停收起，不销毁：同一段视频再打开直接复用，
+	 * 省掉一次几百 KB 到几 MB 的重复下载。
+	 */
+	if (!enabled) {
+		if (videoEl) {
+			videoEl.pause();
+			videoEl.classList.remove("is-playing");
+		}
+		return;
+	}
+
+	const url = videoUrlFor(entry);
+	if (videoEl && videoEl.dataset.url === url) {
+		void videoEl.play().catch(() => {});
+		return;
+	}
+
+	removeMotion();
+	const media = document.querySelector<HTMLElement>(".hero__media");
+	if (!media || !url) return;
+
+	/*
+	 * 别跟首屏海报抢带宽：等 window load 之后再在空闲时开始下视频。
+	 * 手机预设下这一步能让 FCP/LCP 从 2.9s/3.6s 回到 1s 出头。
+	 */
+	const token = `${url}#${Math.random().toString(36).slice(2)}`;
+	motionToken = token;
+
+	const start = () => {
+		// 排队期间可能已经换图或者被用户关掉了
+		if (motionToken !== token) return;
+
+		const video = document.createElement("video");
+		video.className = "hero__media-video";
+		video.muted = true;
+		video.loop = true;
+		video.autoplay = true;
+		video.playsInline = true;
+		video.preload = "auto";
+		video.poster = entry.src;
+		video.setAttribute("aria-hidden", "true");
+		video.tabIndex = -1;
+		video.src = url;
+		video.dataset.url = url;
+		video.addEventListener("playing", () => video.classList.add("is-playing"), { once: true });
+		video.addEventListener("error", () => video.remove(), { once: true });
+
+		media.appendChild(video);
+		videoEl = video;
+		// 被浏览器的自动播放策略拦掉也没关系：静态海报还在下面
+		void video.play().catch(() => {});
+	};
+
+	if (document.readyState === "complete") whenIdle(start);
+	else window.addEventListener("load", () => whenIdle(start), { once: true });
+}
+
+function currentEntryOf(manifest: WallpaperManifest | null): WallpaperEntry | undefined {
+	if (!manifest) return undefined;
+	return (
+		manifest.desktop.find((item) => item.src === currentSrc) ??
+		manifest.mobile.find((item) => item.src === currentSrc)
+	);
+}
+
+/** show() 每次落地后同步状态：记下清单、按当前那张决定要不要放视频 */
+function afterShow(manifest: WallpaperManifest, entry: WallpaperEntry | undefined) {
+	currentManifest = manifest;
+	applyMotion(entry);
+}
+
+function bindMotionToggle() {
+	const button = document.querySelector<HTMLButtonElement>("[data-motion-toggle]");
+	if (!button || button.dataset.bound === "1") return;
+	button.dataset.bound = "1";
+
+	button.addEventListener("click", () => {
+		const next = button.getAttribute("aria-pressed") === "true" ? "off" : "on";
+		// URL 上的 ?motion= 是调试开关，优先级最高；用户一旦自己点了，就把它摘掉
+		try {
+			const url = new URL(window.location.href);
+			if (url.searchParams.has("motion")) {
+				url.searchParams.delete("motion");
+				window.history.replaceState(null, "", url);
+			}
+		} catch {
+			// 某些沙箱里 replaceState 会抛，忽略即可
+		}
+		try {
+			window.localStorage.setItem(MOTION_KEY, next);
+		} catch {
+			// 存不了就只在本次会话生效
+		}
+		applyMotion(currentEntryOf(currentManifest));
+	});
+
+	// 切到后台暂停解码，回来再继续
+	document.addEventListener("visibilitychange", () => {
+		if (!videoEl) return;
+		if (document.hidden) videoEl.pause();
+		else void videoEl.play().catch(() => {});
+	});
 }
 
 function scheduleRotation(manifest: WallpaperManifest) {
@@ -222,6 +424,7 @@ export function initWallpaper() {
 	}
 
 	show(manifest, order[cursor] ?? 0, false);
+	bindMotionToggle();
 	scheduleRotation(manifest);
 	schedulePreload(manifest);
 }

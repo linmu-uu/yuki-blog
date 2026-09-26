@@ -11,6 +11,7 @@
     ,"wallpapers:import": "node scripts/import-wallpapers.mjs"
     ,"wallpapers:palette": "node scripts/extract-palettes.mjs"
 ,"wallpapers:sizes": "node scripts/record-wallpaper-sizes.mjs"
+,"wallpapers:video": "node scripts/import-wallpaper-videos.mjs"
     ,"wallpapers:variants": "node scripts/make-wallpaper-variants.mjs"
     ,"wallpapers:generate": "node scripts/generate-original-wallpapers.mjs"
     ,"wallpapers:ai": "node scripts/prepare-ai-wallpapers.mjs"

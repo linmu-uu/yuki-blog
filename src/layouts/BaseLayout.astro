@@ -146,7 +146,15 @@ const themeCss = [
 				const desktop = Array.isArray(manifest.desktop) ? manifest.desktop : [];
 				if (!desktop.length) return;
 
-				const index = Math.floor(Math.random() * desktop.length);
+				/*
+				 * 调试用：?wallpaper=<序号> 可以指定看清单里的第 N 张（清单顺序 = 文件名排序，
+				 * 例如 ai-* 在最前、mv-* 在最后）。不写就是随机。
+				 */
+				const forced = Number(new URLSearchParams(window.location.search).get("wallpaper"));
+				const index =
+					Number.isInteger(forced) && forced >= 0 && forced < desktop.length
+						? forced
+						: Math.floor(Math.random() * desktop.length);
 				const mobile = Array.isArray(manifest.mobile) && manifest.mobile.length
 					? manifest.mobile[index % manifest.mobile.length]
 					: null;

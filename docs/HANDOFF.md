@@ -21,7 +21,10 @@
 ## 二、当前状态快照（2026-09-24）
 
 - 主站：**11 篇文章**、搜索索引 54634 字；构建 **21 个页面**约 1.5 秒；工作区干净
-- 主站线上版本：`5170e2b0-9775-416a-a685-afaec91cc538`（Worker 名 `firefly`；第四轮部署八次：壁纸 → 新文章 → 日历/锐化 → 壁纸高清化 → 留言样式修复 → SEO → 无障碍修复 → 追加壁纸）
+- 主站线上版本：`cdb5e0d3-a5b7-42f4-87c5-4bfa84cdcb9f`（Worker 名 `firefly`；第四轮部署九次：… → 追加壁纸 → **动态壁纸**）
+- **动态壁纸（2026-09-26 新增）**：`mv-*` 3 张，视频来自壁纸引擎创意工坊（`D:\uuuj\steamapps\workshop\content\431960`），
+  桌面 1920 宽 / 手机 1280 宽、无音轨、~5s 循环；海报（静态 AVIF）走原管线，手机 / 省流 / 减弱动效的用户只下海报，
+  英雄区右下角有「动态壁纸 / 静态壁纸」开关（localStorage 记住），清单在 `src/data/wallpaper-videos.json`
 - 壁纸轮换：**`ba-*` 13 张 + `ai-*` 4 张**（ai 那组是白子雨夜 / 优香教室 / 星野黄昏 / 三一教堂，母版经 ComfyUI `4x-AnimeSharp` 放大)；桌面母版 1600–3840 不等、手机统一 1080×1920；`srcset` 的真实宽度由 `src/data/wallpaper-sizes.json` 提供（`npm run wallpapers:sizes` 生成，别手改）
 - 线上抽查：真机 Chromium 开首页 12 次，命中 `ai-desktop-03/04` 共 3 次，主题色随壁纸变化正常
 - SEO：全站有 JSON-LD（首页 `WebSite` + 站内搜索框，文章页 `BlogPosting` + `BreadcrumbList`）、
@@ -54,6 +57,7 @@ npm run wallpapers:ai        # 把 output/imagegen/*.png（AI 出图）接进轮
 npm run wallpapers:palette   # 重新提取壁纸配色
 npm run wallpapers:variants  # 生成 1600px 壁纸小图
 npm run wallpapers:sizes     # 重算 srcset 用的真实宽度表（加图 / 导入之后跑一次）
+npm run wallpapers:video -- --we <工坊id> [<id> ...]   # 导入视频壁纸（转码 + 抽海报）
 npm run gallery:thumbs       # 生成相册缩略图
 ```
 
@@ -76,6 +80,7 @@ npx wrangler dev --remote           # 本地直连线上资源调试（注意是
 | 壁纸各档真实宽度（srcset 用） | `src/data/wallpaper-sizes.json`（由 `npm run wallpapers:ai` 写，别手改） |
 | 结构化数据（JSON-LD） | `src/data/seo.ts`；页面通过 `BaseLayout` 的 `schema` 属性传进去 |
 | 文章分享卡片（og:image） | `src/pages/og/[slug].jpg.ts`（构建时 sharp 渲染 SVG，加文章自动多一张） |
+| 动态壁纸清单 | `src/data/wallpaper-videos.json`（海报 → 视频，由 `wallpapers:video` 生成） |
 | 缓存策略（HTML / 图片 / 索引） | `public/_headers` |
 | 文章字段校验 | `src/content.config.ts` |
 | 部署配置（Worker 名、静态资源目录） | `wrangler.toml` |
@@ -203,6 +208,25 @@ Twikoo 初始化时会把我们给的 `<div id="tcomment">` **整个换成它自
 顺带发现 `--text-dim` 原来是 `#66799b`，对 `--bg` 只有 **4.37**（AA 线 4.5），已经调到 `#8296b8`（6.4）。
 **以后凡是新加的正文/次要文字，都别直接用 accent 系颜色。**
 
+**25. Workers 静态资源不支持 Range，视频也一样。**
+`<video autoplay muted loop playsinline>` 能边下边播（浏览器会整段拉下来），但**拖进度条会失效**——
+和 `bgm.mp3` 那个坑是同一个（代码修不了，除非把视频挪到 R2 或别的支持 Range 的地方）。
+Safari 对 Range 更挑剔，**这一条本喵没在 Safari 上验过**，主人用 iPad/iPhone 看到不播就换成静态海报即可（开关默认就不会为难手机）。
+
+**26. 关掉视频别用 `removeAttribute("src") + load()`。**
+那会把正在下载的请求打断成 `ERR_ABORTED`，紧接着重建同一段视频**可能直接 error 被摘掉**，
+症状是「开关关了再打开，视频回不来」。正确做法：暂停 + 把元素摘下来（或者干脆留着复用）。
+现在 `applyMotion()` 是「关掉只暂停收起、再打开复用同一个元素」，省一次几百 KB 的重下。
+
+**27. JS 才显示的按钮别留在文档流里。**
+「动态壁纸」按钮只有当前这张有视频版时才出现，一开始写在 `.hero__row` 里，
+它一冒出来就把那一行往左推 —— Lighthouse 记了 **CLS 0.126**。改成绝对定位钉在英雄区右下角就没了。
+
+**28. 视频要等首屏图加载完再下载。**
+一开始 `applyMotion()` 马上 `preload:"auto"` 开下，跟首屏海报抢带宽，
+手机预设下 FCP 2.9s / LCP 3.6s、性能 80 分。改成 `window load` 之后用 `requestIdleCallback`（兜底 800ms）再开始，
+同样的视频壁纸回到 **97 分**（FCP 1.0s）。
+
 **24. `wallpapers:import` 默认会「清空重编号」，新加图要加 `--append`。**
 脚本原本的语义是「整个目录重新导入」，所以开头会把 `ba-desktop-*/ba-mobile-*` 全删掉再从 01 编号。
 2026-09-26 主人新加了 3 张图放在 `D:\wallpapers\new1`，如果直接跑默认模式，原来那 10 张会被顶掉。
@@ -236,6 +260,10 @@ npm run deploy
 - [ ] 百度搜索资源平台**放弃**（2026-09-25）：添加站点反复失败，怀疑是本机代理 fake-ip 干扰 + 无备案在百度抓得极慢，主人决定不做
 - [ ] Lighthouse 剩下的唯一提示是 Twikoo 的 `valid-source-maps`（588KB 的 nocss.js 没带 source map）：
   权重 0，不影响最佳做法满分；真要消掉就得自己托管一份 .map 或者把 vendored 文件换掉
+- [ ] 动态壁纸还能继续加：工坊里还有 160+ 个视频型（`node scripts/import-wallpaper-videos.mjs --we <id>`），
+  单段体积建议压在 2.5MB 以内；`--duration 8 --crf 32` 还能再瘦一圈
+- [ ] 版权提醒：这些是别人上传到创意工坊的作品，清单里存了 `source: workshop:<id>` 做来源标注。
+  自己博客上放着看没大问题，**别拿去做商用或二次分发**
 - [ ] SEO 还能继续做的：① 加 `/tags/<标签>/` 标签页——长尾搜索很容易命中，现在站内只有搜索没有标签落地页；
   ② 给文章加「相关文章」，延长停留时间
 - [x] AI 壁纸已上线并高清化（第四轮）：原图 → ComfyUI `4x-AnimeSharp` 放大到 10240 宽 → `npm run wallpapers:ai`

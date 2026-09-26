@@ -1,5 +1,6 @@
 import palettes from "./wallpaper-palettes.json";
 import sizes from "./wallpaper-sizes.json";
+import videos from "./wallpaper-videos.json";
 import { readdirSync } from "node:fs";
 import path from "node:path";
 
@@ -53,7 +54,7 @@ export const gradientPresets: GradientPreset[] = [
  * 程序生成的纯渐变壁纸（orig-* 以及早期的 schale / millennium / halo / trinity）
  * 没有二次元人物，已经移出轮换；哪天想让它们回来，把前缀加进下面这个数组就行。
  */
-const ALLOWED_PREFIXES = ["ba-", "ai-"];
+const ALLOWED_PREFIXES = ["ba-", "ai-", "mv-"];
 
 function listWallpapers(kind: "desktop" | "mobile"): string[] {
 	try {
@@ -222,6 +223,8 @@ export function paletteToCssVars(palette: WallpaperPalette): string {
 	].join(";");
 }
 
+const videoTable = videos as Record<string, MotionVideoInfo | undefined>;
+
 export interface WallpaperEntry {
 	src: string;
 	/** 两档尺寸的候选列表，交给浏览器按屏幕挑 */
@@ -229,6 +232,15 @@ export interface WallpaperEntry {
 	vars: string;
 	/** 画面平均亮度，用于"白天用亮图、晚上用暗图" */
 	brightness: number;
+	/** 这一张的视频版（动态壁纸）；纯静态图没有这个字段 */
+	video?: MotionVideoInfo;
+}
+
+interface MotionVideoInfo {
+	desktop: string;
+	mobile: string;
+	title?: string;
+	bytes?: { desktop?: number; mobile?: number };
 }
 
 export interface WallpaperManifest {
@@ -276,8 +288,25 @@ export function buildWallpaperManifest(): WallpaperManifest {
 		};
 	};
 
-	return {
-		desktop: background.image.desktop.map(toEntry),
-		mobile: background.image.mobile.map(toEntry),
-	};
+	const desktop = background.image.desktop.map(toEntry);
+	const mobile = background.image.mobile.map(toEntry);
+
+	/*
+	 * 动态壁纸：桌面母版和手机版是一一对应的（同一张图两种裁切），
+	 * 所以按桌面海报查表，两边都挂上同一份视频信息。
+	 */
+	desktop.forEach((entry, index) => {
+		const video = videoTable[entry.src];
+		if (!video) return;
+		const info: MotionVideoInfo = {
+			desktop: video.desktop,
+			mobile: video.mobile,
+			title: video.title,
+			bytes: video.bytes,
+		};
+		entry.video = info;
+		if (mobile[index]) mobile[index].video = info;
+	});
+
+	return { desktop, mobile };
 }
