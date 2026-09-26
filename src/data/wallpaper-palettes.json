@@ -144,30 +144,54 @@
 		"sampled": 5
 	},
 	"/wallpaper/desktop/mv-desktop-02.avif": {
-		"accent": "#7db7d4",
-		"accent2": "#ddaa9a",
-		"accent3": "#c5507a",
-		"brightness": 0.712,
+		"accent": "#5846cc",
+		"accent2": "#cd88ed",
+		"accent3": "#e797d8",
+		"brightness": 0.465,
 		"dark": false,
-		"sampled": 4
+		"sampled": 5
 	},
 	"/wallpaper/desktop/mv-desktop-03.avif": {
-		"accent": "#bf6740",
-		"accent2": "#c63942",
-		"accent3": "#40bfa0",
-		"brightness": 0.354,
-		"dark": true,
+		"accent": "#3e5bc1",
+		"accent2": "#cf51b0",
+		"accent3": "#5640bf",
+		"brightness": 0.544,
+		"dark": false,
 		"sampled": 6
 	},
 	"/wallpaper/desktop/mv-desktop-04.avif": {
-		"accent": "#4051bf",
-		"accent2": "#bf6440",
-		"accent3": "#bf405b",
-		"brightness": 0.341,
-		"dark": true,
+		"accent": "#628dcb",
+		"accent2": "#e79f92",
+		"accent3": "#e6b3bf",
+		"brightness": 0.608,
+		"dark": false,
 		"sampled": 7
 	},
 	"/wallpaper/desktop/mv-desktop-05.avif": {
+		"accent": "#d4887d",
+		"accent2": "#4066bf",
+		"accent3": "#bf4096",
+		"brightness": 0.355,
+		"dark": true,
+		"sampled": 4
+	},
+	"/wallpaper/desktop/mv-desktop-06.avif": {
+		"accent": "#2962d6",
+		"accent2": "#4c40bf",
+		"accent3": "#e3bbaa",
+		"brightness": 0.519,
+		"dark": false,
+		"sampled": 4
+	},
+	"/wallpaper/desktop/mv-desktop-07.avif": {
+		"accent": "#d28877",
+		"accent2": "#cea37b",
+		"accent3": "#d48b93",
+		"brightness": 0.517,
+		"dark": false,
+		"sampled": 2
+	},
+	"/wallpaper/desktop/mv-desktop-08.avif": {
 		"accent": "#d4887d",
 		"accent2": "#cb627c",
 		"accent3": "#5040bf",
@@ -175,75 +199,43 @@
 		"dark": false,
 		"sampled": 6
 	},
-	"/wallpaper/desktop/mv-desktop-06.avif": {
-		"accent": "#5b93f6",
-		"accent2": "#e1cf98",
-		"accent3": "#c9765c",
-		"brightness": 0.533,
-		"dark": false,
-		"sampled": 6
-	},
-	"/wallpaper/desktop/mv-desktop-07.avif": {
-		"accent": "#509fc5",
-		"accent2": "#deae9c",
-		"accent3": "#6acdb8",
-		"brightness": 0.51,
-		"dark": false,
-		"sampled": 4
-	},
-	"/wallpaper/desktop/mv-desktop-08.avif": {
-		"accent": "#5c74c9",
-		"accent2": "#c69cde",
-		"accent3": "#73a2cc",
-		"brightness": 0.567,
-		"dark": false,
-		"sampled": 4
-	},
 	"/wallpaper/desktop/mv-desktop-09.avif": {
-		"accent": "#408cbf",
-		"accent2": "#bf4060",
-		"accent3": "#bf409a",
-		"brightness": 0.258,
-		"dark": true,
-		"sampled": 6
+		"accent": "#e3c05d",
+		"accent2": "#bf404b",
+		"accent3": "#e2a475",
+		"brightness": 0.612,
+		"dark": false,
+		"sampled": 4
 	},
 	"/wallpaper/desktop/mv-desktop-10.avif": {
-		"accent": "#7d9bd4",
-		"accent2": "#5740bf",
-		"accent3": "#e6b3d7",
-		"brightness": 0.614,
-		"dark": false,
-		"sampled": 4
-	},
-	"/wallpaper/desktop/mv-desktop-11.avif": {
-		"accent": "#543cc8",
-		"accent2": "#cb7eed",
-		"accent3": "#e692d7",
-		"brightness": 0.446,
-		"dark": false,
-		"sampled": 5
-	},
-	"/wallpaper/desktop/mv-desktop-12.avif": {
-		"accent": "#bf5840",
-		"accent2": "#5940bf",
-		"accent3": "#e5c994",
-		"brightness": 0.258,
-		"dark": true,
-		"sampled": 6
-	},
-	"/wallpaper/desktop/mv-desktop-13.avif": {
-		"accent": "#7d94d4",
-		"accent2": "#89bdd8",
-		"accent3": "#e6b3c1",
-		"brightness": 0.837,
-		"dark": false,
-		"sampled": 5
-	},
-	"/wallpaper/desktop/mv-desktop-14.avif": {
 		"accent": "#4070bf",
 		"accent2": "#c9e42a",
 		"accent3": "#7262cb",
 		"brightness": 0.461,
+		"dark": false,
+		"sampled": 7
+	},
+	"/wallpaper/desktop/mv-desktop-11.avif": {
+		"accent": "#4051bf",
+		"accent2": "#bf6440",
+		"accent3": "#bf405b",
+		"brightness": 0.341,
+		"dark": true,
+		"sampled": 7
+	},
+	"/wallpaper/desktop/mv-desktop-12.avif": {
+		"accent": "#75afd8",
+		"accent2": "#9889d8",
+		"accent3": "#e9b8af",
+		"brightness": 0.652,
+		"dark": false,
+		"sampled": 10
+	},
+	"/wallpaper/desktop/mv-desktop-13.avif": {
+		"accent": "#dc8c75",
+		"accent2": "#f8cb81",
+		"accent3": "#c44f68",
+		"brightness": 0.58,
 		"dark": false,
 		"sampled": 7
 	},
@@ -392,30 +384,54 @@
 		"sampled": 5
 	},
 	"/wallpaper/mobile/mv-mobile-02.avif": {
-		"accent": "#7db3d4",
-		"accent2": "#deac9c",
-		"accent3": "#8fd0d7",
-		"brightness": 0.709,
+		"accent": "#6654d9",
+		"accent2": "#b776d7",
+		"accent3": "#f0a2e1",
+		"brightness": 0.479,
 		"dark": false,
-		"sampled": 3
+		"sampled": 4
 	},
 	"/wallpaper/mobile/mv-mobile-03.avif": {
-		"accent": "#bf6e40",
-		"accent2": "#e01f28",
-		"accent3": "#c2615b",
-		"brightness": 0.282,
-		"dark": true,
-		"sampled": 3
+		"accent": "#3559ca",
+		"accent2": "#6dcef7",
+		"accent3": "#d955b9",
+		"brightness": 0.615,
+		"dark": false,
+		"sampled": 6
 	},
 	"/wallpaper/mobile/mv-mobile-04.avif": {
-		"accent": "#4051bf",
-		"accent2": "#c16844",
-		"accent3": "#bf405e",
-		"brightness": 0.367,
-		"dark": true,
+		"accent": "#5f8dca",
+		"accent2": "#eca18e",
+		"accent3": "#d68598",
+		"brightness": 0.535,
+		"dark": false,
 		"sampled": 7
 	},
 	"/wallpaper/mobile/mv-mobile-05.avif": {
+		"accent": "#d28778",
+		"accent2": "#bf4061",
+		"accent3": "#406fbf",
+		"brightness": 0.394,
+		"dark": true,
+		"sampled": 6
+	},
+	"/wallpaper/mobile/mv-mobile-06.avif": {
+		"accent": "#1e5ee1",
+		"accent2": "#5240bf",
+		"accent3": "#e6bcb3",
+		"brightness": 0.48,
+		"dark": false,
+		"sampled": 4
+	},
+	"/wallpaper/mobile/mv-mobile-07.avif": {
+		"accent": "#d48e7d",
+		"accent2": "#d1a880",
+		"accent3": "#d78f97",
+		"brightness": 0.559,
+		"dark": false,
+		"sampled": 2
+	},
+	"/wallpaper/mobile/mv-mobile-08.avif": {
 		"accent": "#ce776c",
 		"accent2": "#bf4067",
 		"accent3": "#5140bf",
@@ -423,76 +439,44 @@
 		"dark": false,
 		"sampled": 5
 	},
-	"/wallpaper/mobile/mv-mobile-06.avif": {
-		"accent": "#5c92f5",
-		"accent2": "#c57752",
-		"accent3": "#cddd99",
-		"brightness": 0.452,
-		"dark": false,
-		"sampled": 7
-	},
-	"/wallpaper/mobile/mv-mobile-07.avif": {
-		"accent": "#4b9ac3",
-		"accent2": "#40bf6b",
-		"accent3": "#bf406a",
-		"brightness": 0.524,
-		"dark": false,
-		"sampled": 6
-	},
-	"/wallpaper/mobile/mv-mobile-08.avif": {
-		"accent": "#687ccd",
-		"accent2": "#c99cde",
-		"accent3": "#7ea6cf",
-		"brightness": 0.606,
+	"/wallpaper/mobile/mv-mobile-09.avif": {
+		"accent": "#c19544",
+		"accent2": "#bf404c",
+		"accent3": "#c4825f",
+		"brightness": 0.482,
 		"dark": false,
 		"sampled": 4
-	},
-	"/wallpaper/mobile/mv-mobile-09.avif": {
-		"accent": "#4390c0",
-		"accent2": "#bf405a",
-		"accent3": "#9b40bf",
-		"brightness": 0.403,
-		"dark": true,
-		"sampled": 6
 	},
 	"/wallpaper/mobile/mv-mobile-10.avif": {
-		"accent": "#7d98d4",
-		"accent2": "#5640bf",
-		"accent3": "#8d48c2",
-		"brightness": 0.57,
-		"dark": false,
-		"sampled": 4
-	},
-	"/wallpaper/mobile/mv-mobile-11.avif": {
-		"accent": "#6049d5",
-		"accent2": "#b46bd7",
-		"accent3": "#f2a1e5",
-		"brightness": 0.46,
-		"dark": false,
-		"sampled": 4
-	},
-	"/wallpaper/mobile/mv-mobile-12.avif": {
-		"accent": "#bf5d40",
-		"accent2": "#e5ca94",
-		"accent3": "#5640bf",
-		"brightness": 0.324,
-		"dark": true,
-		"sampled": 6
-	},
-	"/wallpaper/mobile/mv-mobile-13.avif": {
-		"accent": "#d47d94",
-		"accent2": "#85bcd6",
-		"accent3": "#a2b1e0",
-		"brightness": 0.818,
-		"dark": false,
-		"sampled": 7
-	},
-	"/wallpaper/mobile/mv-mobile-14.avif": {
 		"accent": "#5078c5",
 		"accent2": "#c6e223",
 		"accent3": "#8273d0",
 		"brightness": 0.598,
 		"dark": false,
 		"sampled": 9
+	},
+	"/wallpaper/mobile/mv-mobile-11.avif": {
+		"accent": "#4051bf",
+		"accent2": "#c16844",
+		"accent3": "#bf405e",
+		"brightness": 0.367,
+		"dark": true,
+		"sampled": 7
+	},
+	"/wallpaper/mobile/mv-mobile-12.avif": {
+		"accent": "#65b4eb",
+		"accent2": "#8f7cd3",
+		"accent3": "#eab7ae",
+		"brightness": 0.669,
+		"dark": false,
+		"sampled": 8
+	},
+	"/wallpaper/mobile/mv-mobile-13.avif": {
+		"accent": "#dd8d74",
+		"accent2": "#cb6478",
+		"accent3": "#c44f98",
+		"brightness": 0.62,
+		"dark": false,
+		"sampled": 5
 	}
 }

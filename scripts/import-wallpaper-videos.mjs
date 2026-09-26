@@ -146,6 +146,16 @@ for (const { file, title, source } of sources) {
 	const total = Number(info.duration ?? 0);
 	const seconds = Math.min(DURATION, total > 0 ? total : DURATION);
 
+	/*
+	 * 适配全屏检查（踩过坑）：竖图/方图铺满会裁掉大半；素材自带黑边的话永远是黑边。
+	 * 用 --force-aspect 可以强行导入（默认遇到就跳过）。
+	 */
+	const aspect = Number(info.width ?? 0) / Number(info.height ?? 1);
+	if (!argv.includes("--force-aspect") && aspect < 1.6) {
+		console.log(`跳过 ${title.slice(0, 20)}：宽高比 ${aspect.toFixed(2)}（< 1.6，铺满全屏会裁得很惨）`);
+		continue;
+	}
+
 	const desktopVideo = path.join(OUT_VIDEO, `mv-desktop-${stamp}.mp4`);
 	const mobileVideo = path.join(OUT_VIDEO, `mv-mobile-${stamp}.mp4`);
 

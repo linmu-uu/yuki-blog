@@ -32,6 +32,28 @@ interface WallpaperManifest {
 /** 停留多久换下一张：1 分 30 秒 */
 const DEFAULT_INTERVAL = 90000;
 
+/** 本次会话用的是第几张（跨页、跨硬刷新保持一致，不然配色会断层） */
+const STORE_KEY = "yuki:wallpaper-index";
+
+function readStoredIndex(): number | null {
+	try {
+		const raw = window.sessionStorage.getItem(STORE_KEY);
+		if (raw === null) return null;
+		const value = Number(raw);
+		return Number.isInteger(value) ? value : null;
+	} catch {
+		return null;
+	}
+}
+
+function writeStoredIndex(index: number) {
+	try {
+		window.sessionStorage.setItem(STORE_KEY, String(index));
+	} catch {
+		// 隐私模式下写不了，忽略
+	}
+}
+
 /** 本次页面加载选中的序号；模块只在整页加载时执行一次，路由切换不会重来 */
 let order: number[] = [];
 let cursor = 0;
@@ -139,6 +161,13 @@ function show(manifest: WallpaperManifest, index: number, fade: boolean) {
 
 	const isMobile = window.matchMedia("(max-width: 768px)").matches;
 	const active = isMobile && mobileEntry ? mobileEntry : desktopEntry;
+
+	/*
+	 * 主题配色在这里就应用，**不能等到确认有英雄区图片**：
+	 * 站内切页时，新页面的 <style> 是构建时烘焙的旧配色，而当前壁纸是上一个页面延续的，
+	 * 不在这一步补一刀，就会出现「首页一个色、切到别的页另一个色」的断层。
+	 */
+	applyTheme(active.vars);
 
 	// <source> 在窄屏会盖过 <img>，两边都要更新
 	if (source && mobileEntry && source.dataset.wallpaper !== mobileEntry.src) {
@@ -388,6 +417,7 @@ function scheduleRotation(manifest: WallpaperManifest) {
 	rotateTimer = window.setInterval(() => {
 		if (document.hidden) return;
 		cursor = (cursor + 1) % order.length;
+		writeStoredIndex(order[cursor]);
 		show(manifest, order[cursor], true);
 		schedulePreload(manifest);
 	}, rotateInterval());
@@ -409,10 +439,12 @@ export function initWallpaper() {
 		const chosen = (window as unknown as { __yukiWallpaper?: { index?: number } }).__yukiWallpaper;
 		const img = document.querySelector<HTMLImageElement>("[data-wallpaper-image], .hero__media img");
 		const current = img?.dataset.wallpaper || img?.getAttribute("src") || "";
+		// 优先级：head 挑好的 → 本次会话记录的那张 → 按页面上已有的图反查
+		const stored = readStoredIndex();
 		const startIndex =
 			typeof chosen?.index === "number"
 				? chosen.index
-				: manifest.desktop.findIndex((entry) => entry.src === current);
+				: (stored ?? manifest.desktop.findIndex((entry) => entry.src === current));
 
 		if (startIndex >= 0) {
 			// 把它排到队首，后面的顺序保持随机
@@ -423,6 +455,7 @@ export function initWallpaper() {
 		}
 	}
 
+	writeStoredIndex(order[cursor] ?? 0);
 	show(manifest, order[cursor] ?? 0, false);
 	bindMotionToggle();
 	scheduleRotation(manifest);

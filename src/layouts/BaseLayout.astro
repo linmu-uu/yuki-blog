@@ -153,10 +153,25 @@ const themeCss = [
 				const raw = new URLSearchParams(window.location.search).get("wallpaper");
 				// 注意：没有这个参数时 get 返回 null，而 Number(null) === 0，会被误当成「指定第 0 张」
 				const forced = raw === null ? Number.NaN : Number(raw);
+				// 同一趟会话里已经挑过就沿用（换成别的页面时配色才不会跳）
+				let saved = Number.NaN;
+				try {
+					const stored = window.sessionStorage.getItem("yuki:wallpaper-index");
+					if (stored !== null) saved = Number(stored);
+				} catch {
+					// 隐私模式读不了，随机即可
+				}
 				const index =
 					Number.isInteger(forced) && forced >= 0 && forced < desktop.length
 						? forced
-						: Math.floor(Math.random() * desktop.length);
+						: Number.isInteger(saved) && saved >= 0 && saved < desktop.length
+							? saved
+							: Math.floor(Math.random() * desktop.length);
+				try {
+					window.sessionStorage.setItem("yuki:wallpaper-index", String(index));
+				} catch {
+					// 忽略
+				}
 				const mobile = Array.isArray(manifest.mobile) && manifest.mobile.length
 					? manifest.mobile[index % manifest.mobile.length]
 					: null;
