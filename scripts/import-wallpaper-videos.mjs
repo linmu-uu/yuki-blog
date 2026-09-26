@@ -38,7 +38,7 @@ const flagValues = (name, fallback) => {
 	const index = argv.indexOf(name);
 	return index >= 0 && argv[index + 1] ? argv[index + 1] : fallback;
 };
-const DURATION = Number(flagValues("--duration", "7"));
+const DURATION = Number(flagValues("--duration", "5"));
 /*
  * 桌面 2560 宽：主人的屏是 2560×1600 @150%，首屏大图要 2560 设备像素；
  * 早先压 1920 会被浏览器放大 1.33 倍看得很糊。CRF 26 + tune animation 是
@@ -46,7 +46,7 @@ const DURATION = Number(flagValues("--duration", "7"));
  */
 const WIDTH = Number(flagValues("--width", "2560"));
 const MOBILE_WIDTH = Number(flagValues("--mobile-width", "1280"));
-const CRF = Number(flagValues("--crf", "27"));
+const CRF = Number(flagValues("--crf", "28"));
 const RESET = argv.includes("--reset");
 
 /** 收集要处理的源：--we 给的工坊 id，或者命令行里的目录 */
