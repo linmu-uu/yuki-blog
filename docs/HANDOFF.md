@@ -21,7 +21,7 @@
 ## 二、当前状态快照（2026-09-24）
 
 - 主站：**11 篇文章**、搜索索引 54634 字；构建 **21 个页面**约 1.5 秒；工作区干净
-- 主站线上版本：`cdb5e0d3-a5b7-42f4-87c5-4bfa84cdcb9f`（Worker 名 `firefly`；第四轮部署九次：… → 追加壁纸 → **动态壁纸**）
+- 主站线上版本：`7c443aa1-b8fd-4c14-8835-79678e28c2b7`（Worker 名 `firefly`；第四轮部署十次：… → 追加壁纸 → 动态壁纸 → 修 `Number(null)`）
 - **动态壁纸（2026-09-26 新增）**：`mv-*` 3 张，视频来自壁纸引擎创意工坊（`D:\uuuj\steamapps\workshop\content\431960`），
   桌面 1920 宽 / 手机 1280 宽、无音轨、~5s 循环；海报（静态 AVIF）走原管线，手机 / 省流 / 减弱动效的用户只下海报，
   英雄区右下角有「动态壁纸 / 静态壁纸」开关（localStorage 记住），清单在 `src/data/wallpaper-videos.json`
@@ -221,6 +221,18 @@ Safari 对 Range 更挑剔，**这一条本喵没在 Safari 上验过**，主人
 **27. JS 才显示的按钮别留在文档流里。**
 「动态壁纸」按钮只有当前这张有视频版时才出现，一开始写在 `.hero__row` 里，
 它一冒出来就把那一行往左推 —— Lighthouse 记了 **CLS 0.126**。改成绝对定位钉在英雄区右下角就没了。
+
+**29. `Number(new URLSearchParams(...).get("x"))` 在参数不存在时是 0，不是 NaN。**
+本喵给壁纸挑选加 `?wallpaper=<序号>` 调试参数时就这么写的，结果**每次都被当成「指定第 0 张」**，
+现象是「背景永远不换」——主人一眼就看出来了。正确写法：
+
+```js
+const raw = new URLSearchParams(location.search).get("wallpaper");
+const forced = raw === null ? Number.NaN : Number(raw);
+```
+
+顺带检查了同文件其它同类写法：`wallpaperInterval` 那个因为还有 `>= 1500` 的下限判断，侥幸没事；
+`motion` 是拿字符串比较，也安全。**这类读参数的代码以后一律先判 null。**
 
 **28. 视频要等首屏图加载完再下载。**
 一开始 `applyMotion()` 马上 `preload:"auto"` 开下，跟首屏海报抢带宽，

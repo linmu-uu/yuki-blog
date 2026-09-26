@@ -150,7 +150,9 @@ const themeCss = [
 				 * 调试用：?wallpaper=<序号> 可以指定看清单里的第 N 张（清单顺序 = 文件名排序，
 				 * 例如 ai-* 在最前、mv-* 在最后）。不写就是随机。
 				 */
-				const forced = Number(new URLSearchParams(window.location.search).get("wallpaper"));
+				const raw = new URLSearchParams(window.location.search).get("wallpaper");
+				// 注意：没有这个参数时 get 返回 null，而 Number(null) === 0，会被误当成「指定第 0 张」
+				const forced = raw === null ? Number.NaN : Number(raw);
 				const index =
 					Number.isInteger(forced) && forced >= 0 && forced < desktop.length
 						? forced
