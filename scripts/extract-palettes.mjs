@@ -221,7 +221,7 @@ for (const { dir, prefix } of DIRS) {
 	}
 	for (const entry of entries.sort()) {
 		// 只分析实际参与轮换的壁纸（ba-* 自己找的图、ai-* AI 原创图）
-		if (!/^(?:ba|ai|mv)-(?:desktop|mobile)-\d+\.avif$/.test(entry)) continue;
+		if (!/^(?:ba|ai|mv)-(?:desktop|mobile)-\d+(?:-[0-9a-f]{8})?\.avif$/.test(entry)) continue;
 		const info = await analyse(path.join(dir, entry));
 		result[`${prefix}${entry}`] = info;
 		count += 1;

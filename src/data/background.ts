@@ -61,7 +61,9 @@ function listWallpapers(kind: "desktop" | "mobile"): string[] {
 		return readdirSync(path.resolve("public/wallpaper", kind))
 			.filter((name) => {
 				if (!name.endsWith(".avif")) return false;
-				if (/-\d+-\d+\.avif$/.test(name)) return false; // 1600/2560 小图交给 srcset，不进轮换
+				// 候选尺寸文件（-1600 / -2560 / -3840，可能还带内容哈希后缀）交给 srcset，不进轮换
+				if (/-\d{3,4}\.avif$/.test(name)) return false;
+				if (/-\d+-\d+\.avif$/.test(name)) return false;
 				return ALLOWED_PREFIXES.some((prefix) => name.startsWith(`${prefix}${kind}-`));
 			})
 			.sort()

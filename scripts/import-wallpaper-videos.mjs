@@ -229,4 +229,7 @@ for (const { file, title, source } of sources) {
 
 await writeFile(MANIFEST, `${JSON.stringify(manifest, null, "\t")}\n`, "utf8");
 console.log(`\n清单已更新：${path.relative(process.cwd(), MANIFEST)}（共 ${Object.keys(manifest).length} 条）`);
+
+// 关键：文件名带内容哈希。否则 /wallpaper/* 缓存一天，换了内容用户还看旧的（踩过）
+await run("node", ["scripts/hash-wallpaper-assets.mjs"]);
 console.log("下一步：npm run wallpapers:palette && npm run wallpapers:sizes && npm run deploy");
