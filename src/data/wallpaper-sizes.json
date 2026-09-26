@@ -423,6 +423,45 @@
 			}
 		]
 	},
+	"/wallpaper/desktop/mv-desktop-14.avif": {
+		"width": 2560,
+		"candidates": [
+			{
+				"src": "/wallpaper/desktop/mv-desktop-14-1600.avif",
+				"w": 1600
+			},
+			{
+				"src": "/wallpaper/desktop/mv-desktop-14.avif",
+				"w": 2560
+			}
+		]
+	},
+	"/wallpaper/desktop/mv-desktop-15.avif": {
+		"width": 2560,
+		"candidates": [
+			{
+				"src": "/wallpaper/desktop/mv-desktop-15-1600.avif",
+				"w": 1600
+			},
+			{
+				"src": "/wallpaper/desktop/mv-desktop-15.avif",
+				"w": 2560
+			}
+		]
+	},
+	"/wallpaper/desktop/mv-desktop-16.avif": {
+		"width": 2560,
+		"candidates": [
+			{
+				"src": "/wallpaper/desktop/mv-desktop-16-1600.avif",
+				"w": 1600
+			},
+			{
+				"src": "/wallpaper/desktop/mv-desktop-16.avif",
+				"w": 2560
+			}
+		]
+	},
 	"/wallpaper/desktop/schale.avif": {
 		"width": 3840,
 		"candidates": [

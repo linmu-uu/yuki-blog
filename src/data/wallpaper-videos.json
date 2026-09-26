@@ -141,5 +141,38 @@
 			"desktop": 2205387,
 			"mobile": 576740
 		}
+	},
+	"/wallpaper/desktop/mv-desktop-14.avif": {
+		"title": "崩坏星穹铁道. 星X三月七",
+		"source": "workshop:3287625074",
+		"duration": 7,
+		"desktop": "/wallpaper/video/mv-desktop-14.mp4",
+		"mobile": "/wallpaper/video/mv-mobile-14.mp4",
+		"bytes": {
+			"desktop": 3203290,
+			"mobile": 868221
+		}
+	},
+	"/wallpaper/desktop/mv-desktop-15.avif": {
+		"title": "【柠-鸢】流萤花嫁4K",
+		"source": "workshop:3290644366",
+		"duration": 7,
+		"desktop": "/wallpaper/video/mv-desktop-15.mp4",
+		"mobile": "/wallpaper/video/mv-mobile-15.mp4",
+		"bytes": {
+			"desktop": 4471522,
+			"mobile": 1053740
+		}
+	},
+	"/wallpaper/desktop/mv-desktop-16.avif": {
+		"title": "青丝缠雪剑，素袂曳流光。 一剑横秋气，独对月轮新。-知更鸟",
+		"source": "workshop:3572303915",
+		"duration": 5.73,
+		"desktop": "/wallpaper/video/mv-desktop-16.mp4",
+		"mobile": "/wallpaper/video/mv-mobile-16.mp4",
+		"bytes": {
+			"desktop": 2895941,
+			"mobile": 709013
+		}
 	}
 }
