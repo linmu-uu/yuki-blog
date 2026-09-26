@@ -98,14 +98,22 @@ const useGradient = background.mode === "gradient";
 			 * aria-pressed 表示「现在是不是在播」，无障碍读屏也读得懂。
 			 */}
 			<button type="button" class="hero__motion" data-motion-toggle aria-pressed="false" hidden>
-				<svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+				{/* 两个图标按状态切换：正在播显示暂停，暂停中显示播放三角 */}
+				<svg class="hero__motion-icon hero__motion-icon--play" viewBox="0 0 24 24" fill="none" aria-hidden="true">
 					<path
 						d="M8 5.5v13l11-6.5-11-6.5Z"
 						stroke="currentColor"
 						stroke-width="1.7"
 						stroke-linejoin="round"></path>
 				</svg>
-				<span data-motion-label>动态壁纸</span>
+				<svg class="hero__motion-icon hero__motion-icon--pause" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+					<path
+						d="M9 5.5v13M15 5.5v13"
+						stroke="currentColor"
+						stroke-width="1.8"
+						stroke-linecap="round"></path>
+				</svg>
+				<span data-motion-label>播放动效</span>
 			</button>
 		</div>
 	</div>
@@ -528,6 +536,12 @@ const useGradient = background.mode === "gradient";
 	.hero__motion svg {
 		width: 16px;
 		height: 16px;
+	}
+
+	/* 播放中显示「暂停」图标，暂停中显示播放三角 */
+	.hero__motion[aria-pressed="true"] .hero__motion-icon--play,
+	.hero__motion[aria-pressed="false"] .hero__motion-icon--pause {
+		display: none;
 	}
 
 	.hero__motion[aria-pressed="true"] {
