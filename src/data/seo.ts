@@ -81,6 +81,69 @@ export interface PostLike {
 	};
 }
 
+/**
+ * 聚合页（标签索引 `/tags/`、单个标签 `/tags/<标签>/`）用：
+ * `CollectionPage` + 里面装一份 `ItemList`，再加 `BreadcrumbList`。
+ *
+ * 为什么要专门写 ItemList：Google 看到「一个页面列了一串同类文章」时，
+ * 靠 ItemList 才知道这是列表页而不是普通正文，长尾结果里更容易被选成落地页。
+ */
+export function collectionSchemas(config: {
+	/** 站内路径，比如 "/tags/" 或 "/tags/%E5%BB%BA%E7%AB%99/" */
+	path: string;
+	/** 页面名（也是面包屑最后一节的文字） */
+	name: string;
+	description: string;
+	/** 面包屑中间层（不含首页和当前页），比如 [{ name: "标签", path: "/tags/" }] */
+	trail?: { name: string; path: string }[];
+	/** 列表项：文章标题 + 绝对地址 */
+	items: { name: string; url: string }[];
+}): string[] {
+	const url = abs(config.path);
+
+	const collection = {
+		"@context": "https://schema.org",
+		"@type": "CollectionPage",
+		"@id": `${url}#collection`,
+		name: config.name,
+		description: config.description,
+		url,
+		inLanguage: "zh-CN",
+		isPartOf: { "@id": `${site.url}/#website` },
+		author: authorSchema(),
+		publisher: publisherSchema(),
+		mainEntity: {
+			"@type": "ItemList",
+			numberOfItems: config.items.length,
+			itemListElement: config.items.map((item, index) => ({
+				"@type": "ListItem",
+				position: index + 1,
+				name: item.name,
+				url: item.url,
+			})),
+		},
+	};
+
+	const crumbs = [
+		{ name: "首页", item: `${site.url}/` },
+		...(config.trail ?? []).map((step) => ({ name: step.name, item: abs(step.path) })),
+		{ name: config.name, item: url },
+	];
+
+	const breadcrumb = {
+		"@context": "https://schema.org",
+		"@type": "BreadcrumbList",
+		itemListElement: crumbs.map((crumb, index) => ({
+			"@type": "ListItem",
+			position: index + 1,
+			name: crumb.name,
+			item: crumb.item,
+		})),
+	};
+
+	return [serialize(collection), serialize(breadcrumb)];
+}
+
 /** 文章页用：BlogPosting + BreadcrumbList */
 export function postSchemas(post: PostLike, image: string): string[] {
 	const url = postUrl(post.id);

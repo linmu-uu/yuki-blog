@@ -2,6 +2,7 @@
 import { getCollection } from "astro:content";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import PageHeader from "../components/PageHeader.astro";
+import { collectTags, postHref } from "../data/tags";
 
 const allPosts = await getCollection("posts", ({ data }) => !data.draft);
 const posts = allPosts.sort((a, b) => b.data.published.valueOf() - a.data.published.valueOf());
@@ -14,13 +15,9 @@ for (const post of posts) {
 	years.set(year, bucket);
 }
 
-const tagCounts = new Map<string, number>();
-for (const post of posts) {
-	for (const tag of post.data.tags) tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
-}
-const tags = [...tagCounts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+const tags = collectTags(posts);
 
-const href = (id: string) => `/posts/${id.replace(/\.(md|mdx)$/, "")}/`;
+const href = postHref;
 const dateLabel = (date: Date) =>
 	new Intl.DateTimeFormat("zh-CN", { month: "2-digit", day: "2-digit" }).format(date);
 ---
@@ -32,13 +29,15 @@ const dateLabel = (date: Date) =>
 		<div class="archive__tags" data-tags>
 			<button class="archive__tag is-active" type="button" data-tag="">全部</button>
 			{
-				tags.map(([name, count]) => (
-					<button class="archive__tag" type="button" data-tag={name}>
-						{name}
-						<span class="archive__tag-count">{count}</span>
+				tags.map((tag) => (
+					<button class="archive__tag" type="button" data-tag={tag.name}>
+						{tag.name}
+						<span class="archive__tag-count">{tag.count}</span>
 					</button>
 				))
 			}
+			{/* 上面的按钮是站内过滤（JS 改 URL 参数）；这里给爬虫和访客一条通往标签落地页的路 */}
+			<a class="archive__tag archive__tag--link" href="/tags/">标签总览 →</a>
 		</div>
 
 		{
@@ -107,6 +106,11 @@ const dateLabel = (date: Date) =>
 
 	.archive__tag-count {
 		opacity: 0.65;
+	}
+
+	/* 「标签总览」是个真链接（去 /tags/），和过滤按钮区分开 */
+	.archive__tag--link {
+		border-style: dashed;
 	}
 
 	.archive__year + .archive__year {

@@ -1,0 +1,168 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import PageHeader from "../../components/PageHeader.astro";
+import PostCard from "../../components/PostCard.astro";
+import { site } from "../../data/site";
+import { collectionSchemas, postUrl } from "../../data/seo";
+import { collectTags, postHref, postsWithTag, tagHref, type PostEntry } from "../../data/tags";
+
+/*
+ * 单个标签的落地页：/tags/<标签>/
+ *
+ * 每个标签一个真实路径（不是 /archive?tag=xxx），sitemap 里也会列出来 ——
+ * 搜索引擎抓到的是「一个专门讲某主题的列表页」，标题、描述、结构化数据都是齐的。
+ *
+ * 关于中文 URL：`params.tag` 直接写中文，Astro 构建出来的目录名就是中文；
+ * 站内链接统一走 tagHref()（percent-encode），两边指向同一个地方。
+ */
+export async function getStaticPaths() {
+	const posts = (await getCollection("posts", ({ data }) => !data.draft)).sort(
+		(a, b) => b.data.published.valueOf() - a.data.published.valueOf(),
+	);
+	const tags = collectTags(posts);
+
+	return tags.map((tag) => ({
+		params: { tag: tag.name },
+		props: {
+			tag: tag.name,
+			count: tag.count,
+			posts: postsWithTag(posts, tag.name),
+			siblings: tags,
+		},
+	}));
+}
+
+interface Props {
+	tag: string;
+	count: number;
+	posts: PostEntry[];
+	siblings: { name: string; count: number }[];
+}
+
+const { tag, count, posts, siblings } = Astro.props;
+
+const description = `「${tag}」标签下一共 ${count} 篇文章，按时间从新到旧排列。`;
+const path = tagHref(tag);
+
+const newest = posts.reduce(
+	(latest, post) => {
+		const date = post.data.updated ?? post.data.published;
+		return !latest || date > latest ? date : latest;
+	},
+	undefined as Date | undefined,
+);
+const newestLabel = newest
+	? new Intl.DateTimeFormat("zh-CN", { year: "numeric", month: "long", day: "numeric" }).format(
+			newest,
+		)
+	: "";
+---
+
+<BaseLayout
+	title={`标签：${tag} - ${site.title}`}
+	description={description}
+	schema={collectionSchemas({
+		path,
+		name: `标签：${tag}`,
+		description,
+		trail: [{ name: "标签", path: "/tags/" }],
+		items: posts.map((post) => ({ name: post.data.title, url: postUrl(post.id) })),
+	})}
+>
+	<PageHeader
+		title={`#${tag}`}
+		description={description}
+		meta={newestLabel ? `最近更新：${newestLabel}` : ""}
+	/>
+
+	<main class="shell page-body tag-page">
+		<nav class="tag-nav" aria-label="全部标签">
+			<a class="tag-nav__tag" href="/tags/">全部标签</a>
+			{
+				siblings.map((item) => (
+					<a
+						class:list={["tag-nav__tag", { "is-current": item.name === tag }]}
+						href={tagHref(item.name)}
+						aria-current={item.name === tag ? "page" : undefined}
+					>
+						{item.name}
+						<span class="tag-nav__count">{item.count}</span>
+					</a>
+				))
+			}
+		</nav>
+
+		{/*
+		 * 这个 h2 不是装饰：PostCard 的标题是 h3，上面没有 h2 的话
+		 * Lighthouse 会判「标题层级跳跃」（h1 → h3），无障碍掉分。
+		 */}
+		<section class="tag-posts">
+			<h2 class="section-title">这个标签下的文章</h2>
+			<div class="post-list">
+				{
+					posts.map((post, index) => (
+						<PostCard
+							title={post.data.title}
+							description={post.data.description}
+							href={postHref(post.id)}
+							published={post.data.published}
+							category={post.data.category}
+							tags={post.data.tags}
+							delay={index * 90}
+							variant={index}
+							slug={post.id.replace(/\.(md|mdx)$/, "")}
+						/>
+					))
+				}
+			</div>
+		</section>
+	</main>
+</BaseLayout>
+
+<style>
+	.tag-nav {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+		margin-bottom: var(--space-6);
+	}
+
+	.tag-nav__tag {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		padding: 5px 12px;
+		border-radius: var(--radius-full);
+		border: 1px solid var(--border);
+		background: rgba(255, 255, 255, 0.03);
+		font-size: var(--text-xs);
+		color: var(--text-muted);
+		transition:
+			color var(--dur) var(--ease-soft),
+			border-color var(--dur) var(--ease-soft),
+			background var(--dur) var(--ease-soft);
+	}
+
+	.tag-nav__tag:hover {
+		color: var(--text);
+		border-color: var(--border-strong);
+	}
+
+	.tag-nav__tag.is-current {
+		color: #12101f;
+		background: var(--gradient-accent);
+		border-color: transparent;
+		font-weight: 600;
+	}
+
+	.tag-nav__count {
+		opacity: 0.65;
+	}
+
+	.post-list {
+		display: flex;
+		flex-direction: column;
+		gap: var(--content-gap);
+	}
+</style>

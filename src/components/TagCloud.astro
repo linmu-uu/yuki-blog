@@ -1,19 +1,22 @@
 ---
+import { tagHref } from "../data/tags";
+
 interface Props {
 	tags: { name: string; count: number }[];
+	title?: string;
 }
 
-const { tags } = Astro.props;
+const { tags, title = "标签" } = Astro.props;
 ---
 
 <section class="card tagcloud" data-reveal style="--reveal-delay:160ms">
-	<h2 class="section-title">标签</h2>
+	<h2 class="section-title">{title}</h2>
 	<div class="tagcloud__list">
 		{
 			tags.map((tag) => (
 				<a
 					class="tagcloud__tag"
-					href={`/archive?tag=${encodeURIComponent(tag.name)}`}
+					href={tagHref(tag.name)}
 					data-tint={tag.name.length % 3}
 				>
 					{tag.name}
@@ -22,6 +25,7 @@ const { tags } = Astro.props;
 			))
 		}
 	</div>
+	<a class="tagcloud__more" href="/tags/">全部标签 →</a>
 </section>
 
 <style>
@@ -39,6 +43,8 @@ const { tags } = Astro.props;
 		display: inline-flex;
 		align-items: center;
 		gap: 6px;
+		/* 可点区域 ≥24px（Lighthouse 手机端 tap targets） */
+		min-height: 26px;
 		padding: 5px 12px;
 		border-radius: var(--radius-full);
 		border: 1px solid var(--border);
@@ -71,5 +77,19 @@ const { tags } = Astro.props;
 
 	.tagcloud__count {
 		color: var(--text-dim);
+	}
+
+	.tagcloud__more {
+		display: inline-flex;
+		align-items: center;
+		min-height: 26px;
+		margin-top: var(--space-3);
+		font-size: var(--text-xs);
+		color: var(--text-dim);
+		transition: color var(--dur) var(--ease-soft);
+	}
+
+	.tagcloud__more:hover {
+		color: var(--accent-soft);
 	}
 </style>

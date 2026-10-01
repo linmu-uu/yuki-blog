@@ -2,9 +2,12 @@
 import { getCollection, render } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import Comment from "../../components/Comment.astro";
+import RelatedPosts from "../../components/RelatedPosts.astro";
 import "../../styles/prose.css";
 import { site } from "../../data/site";
 import { postSchemas } from "../../data/seo";
+import { tagHref } from "../../data/tags";
+import { relatedPosts } from "../../data/related";
 
 export async function getStaticPaths() {
 	const posts = await getCollection("posts", ({ data }) => !data.draft);
@@ -17,6 +20,10 @@ export async function getStaticPaths() {
 const { post } = Astro.props;
 const { Content, headings } = await render(post);
 const toc = headings.filter((heading) => heading.depth <= 3);
+
+/* 相关文章：按共同标签 / 同分类打分，最多 3 篇，一篇都没沾边的就不显示这一块 */
+const allPosts = await getCollection("posts", ({ data }) => !data.draft);
+const related = relatedPosts(post, allPosts, 3);
 
 /* 每篇文章都有构建时生成的分享卡片（src/pages/og/[slug].jpg.ts） */
 const ogImage = post.data.image || "/og/" + post.id.replace(/\.(md|mdx)$/, "") + ".jpg";
@@ -57,7 +64,9 @@ const publishedLabel = new Intl.DateTimeFormat("zh-CN", {
 					post.data.tags.length > 0 && (
 						<ul class="post__tags">
 							{post.data.tags.map((tag) => (
-								<li>#{tag}</li>
+								<li>
+									<a href={tagHref(tag)}>#{tag}</a>
+								</li>
 							))}
 						</ul>
 					)
@@ -87,6 +96,7 @@ const publishedLabel = new Intl.DateTimeFormat("zh-CN", {
 		</div>
 
 		<div class="shell post__footer">
+			<RelatedPosts posts={related} />
 			<Comment />
 		</div>
 		</article>
@@ -153,6 +163,20 @@ const publishedLabel = new Intl.DateTimeFormat("zh-CN", {
 		list-style: none;
 		font-size: var(--text-xs);
 		color: var(--text-dim);
+	}
+
+	/* 标签现在链到标签落地页；可点区域撑到 24px 高（Lighthouse 手机端 tap targets） */
+	.post__tags a {
+		display: inline-flex;
+		align-items: center;
+		min-height: 26px;
+		padding: 0 4px;
+		color: var(--text-dim);
+		transition: color var(--dur) var(--ease-soft);
+	}
+
+	.post__tags a:hover {
+		color: var(--accent-soft);
 	}
 
 	.post__body {

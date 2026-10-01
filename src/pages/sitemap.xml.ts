@@ -1,5 +1,6 @@
 import { getCollection } from "astro:content";
 import { site } from "../data/site";
+import { collectTags, latestDate, postsWithTag, tagHref } from "../data/tags";
 
 /*
  * 站点地图：/sitemap.xml
@@ -17,6 +18,7 @@ const staticPages: { path: string; changefreq: string; priority: string; aggrega
 	{ path: "/moments/", changefreq: "daily", priority: "0.8" },
 	{ path: "/gallery/", changefreq: "weekly", priority: "0.7" },
 	{ path: "/search/", changefreq: "monthly", priority: "0.5" },
+	{ path: "/tags/", changefreq: "weekly", priority: "0.6", aggregate: true },
 	{ path: "/friends/", changefreq: "monthly", priority: "0.6" },
 	{ path: "/guestbook/", changefreq: "weekly", priority: "0.6" },
 	{ path: "/about/", changefreq: "monthly", priority: "0.6" },
@@ -63,6 +65,26 @@ export async function GET() {
 				"\t\t</image:image>",
 				"\t</url>",
 			].join("\n"),
+		);
+	}
+
+	/*
+	 * 标签落地页（/tags/<标签>/）：lastmod 用「这个标签下最新的一篇文章」，
+	 * 比写构建当天诚实 —— 标签页内容确实只在这时才会变。
+	 */
+	for (const tag of collectTags(posts)) {
+		const lastmod = latestDate(postsWithTag(posts, tag.name));
+		urls.push(
+			[
+				"\t<url>",
+				`\t\t<loc>${site.url}${tagHref(tag.name)}</loc>`,
+				lastmod ? `\t\t<lastmod>${isoDate(lastmod)}</lastmod>` : "",
+				"\t\t<changefreq>weekly</changefreq>",
+				"\t\t<priority>0.5</priority>",
+				"\t</url>",
+			]
+				.filter(Boolean)
+				.join("\n"),
 		);
 	}
 

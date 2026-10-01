@@ -87,6 +87,15 @@
 /about/
   Cache-Control: public, max-age=0, stale-while-revalidate=120
 
+# 标签落地页。注意两条 Cloudflare 的规矩：
+#   1. 一条规则只允许一个 `*`（写 /tags/*/* 会被整条跳过，wrangler 只给一句 warning）
+#   2. `*` 不跨 `/`，而标签页在 /tags/<标签>/ 这一层，所以这里用 `:tag` 占位符
+/tags/
+  Cache-Control: public, max-age=0, stale-while-revalidate=120
+
+/tags/:tag/
+  Cache-Control: public, max-age=0, stale-while-revalidate=120
+
 /admin/
   Cache-Control: public, max-age=0, stale-while-revalidate=120
 

@@ -1,0 +1,163 @@
+---
+import { postHref, tagHref, type PostEntry } from "../data/tags";
+
+/*
+ * 文章底部的「相关文章」。候选和排序在 src/data/related.ts（按共同标签 / 同分类打分），
+ * 这里只管展示：没有相关文章就整块不渲染，不占位置。
+ *
+ * 卡片整块可点用的是「拉伸链接」写法（标题里的 <a> 用 ::after 铺满卡片），
+ * 这样既没有嵌套 <a>（不合法），键盘 Tab 也只有一个落点；
+ * 标签链接靠 z-index 压在拉伸层上面，仍然各点各的。
+ */
+interface Props {
+	posts: PostEntry[];
+	title?: string;
+}
+
+const { posts, title = "相关文章" } = Astro.props;
+
+const dateLabel = new Intl.DateTimeFormat("zh-CN", {
+	year: "numeric",
+	month: "2-digit",
+	day: "2-digit",
+});
+---
+
+{
+	posts.length > 0 && (
+		<section class="related">
+			<h2 class="section-title">{title}</h2>
+			<ul class="related__list">
+				{posts.map((post, index) => (
+					<li
+						class="card related__item"
+						data-reveal
+						style={`--reveal-delay:${index * 80}ms`}
+					>
+						<div class="related__meta">
+							<time datetime={post.data.published.toISOString()}>
+								{dateLabel.format(post.data.published)}
+							</time>
+							{post.data.category && <span class="related__category">{post.data.category}</span>}
+						</div>
+						<h3 class="related__title">
+							<a href={postHref(post.id)}>{post.data.title}</a>
+						</h3>
+						{post.data.description && <p class="related__desc">{post.data.description}</p>}
+						{post.data.tags.length > 0 && (
+							<ul class="related__tags">
+								{post.data.tags.map((tag) => (
+									<li>
+										<a href={tagHref(tag)}>#{tag}</a>
+									</li>
+								))}
+							</ul>
+						)}
+					</li>
+				))}
+			</ul>
+		</section>
+	)
+}
+
+<style>
+	.related {
+		margin-bottom: var(--space-7);
+	}
+
+	.related__list {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+		gap: var(--content-gap);
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.related__item {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+		padding: var(--space-4) var(--space-5) var(--space-5);
+	}
+
+	.related__item:hover {
+		border-color: rgba(95, 225, 255, 0.45);
+		box-shadow: var(--shadow-lift), var(--glow-accent);
+	}
+
+	.related__meta {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
+		font-size: var(--text-xs);
+		color: var(--text-dim);
+		font-variant-numeric: tabular-nums;
+	}
+
+	.related__category {
+		padding: 2px 10px;
+		border-radius: var(--radius-full);
+		border: 1px solid rgba(95, 225, 255, 0.35);
+		background: rgba(95, 225, 255, 0.12);
+		color: var(--accent-3);
+	}
+
+	.related__title {
+		margin: 0;
+		font-size: var(--text-base);
+		font-weight: 700;
+		line-height: 1.5;
+	}
+
+	.related__title a {
+		color: var(--text);
+		transition: color var(--dur) var(--ease-soft);
+	}
+
+	.related__item:hover .related__title a {
+		color: var(--accent-soft);
+	}
+
+	/* 拉伸链接：整张卡片可点，但仍然只有一个 <a> */
+	.related__title a::after {
+		content: "";
+		position: absolute;
+		inset: 0;
+		border-radius: var(--radius);
+	}
+
+	.related__desc {
+		margin: 0;
+		font-size: var(--text-xs);
+		line-height: 1.8;
+		color: var(--text-muted);
+		display: -webkit-box;
+		-webkit-line-clamp: 3;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+	}
+
+	.related__tags {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-3);
+		margin: auto 0 0;
+		padding: var(--space-3) 0 0;
+		list-style: none;
+		font-size: var(--text-xs);
+		color: var(--text-dim);
+	}
+
+	/* 标签要压在拉伸链接上面，否则点过去还是文章页 */
+	.related__tags a {
+		position: relative;
+		z-index: 1;
+		color: var(--text-dim);
+		transition: color var(--dur) var(--ease-soft);
+	}
+
+	.related__tags a:hover {
+		color: var(--accent-soft);
+	}
+</style>

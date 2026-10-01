@@ -2,7 +2,7 @@
 
 > **用途**：这是一个长期在做的个人博客项目。新开一个 Codex 会话时，让助手先读这份文档，就能立刻接上进度。
 >
-> **本版**：2026-10-01 重写（第五轮起点）。前四轮的完整叙述和 38 条踩坑的详细经过都留在
+> **本版**：2026-10-01 更新（第五轮：标签落地页 + 相关文章）。前四轮的完整叙述和 38 条踩坑的详细经过都留在
 > `docs/HANDOFF-2026-09-archive.md`，本文只保留**现在要用的东西**。
 >
 > **新会话开场白**（照抄即可）：
@@ -20,14 +20,17 @@
 | `D:\ComfyUI_windows_portable` | 本地 ComfyUI（SDXL + 放大模型） | — | 命令行启动，见第八节 |
 | `D:\New` | 助手人格设定（喵酱）+ 临时脚本 | — | — |
 | `C:\Users\ROG\.codex\visualizations\2026\09\24\01a0d3fb-57f8-7270-b772-970fb500f2e9` | **助手证据 / 工具脚本目录**（截图、对比图、验收脚本，见第八节） | — | — |
+| `C:\Users\ROG\.codex\visualizations\2026\10\01\01a0f7fa-fc81-7a73-aee8-c89c7233d813` | 第五轮的验收脚本与截图（`shot-tags.mjs`、`lh-run.mjs` 新版） | — | — |
 
 所有 Worker 在同一个 Cloudflare 账号下，主站是纯静态资源 Worker（名字沿用老站的 `firefly`）。
 
 ## 二、当前状态快照（2026-10-01 核实）
 
-- **内容**：11 篇文章、搜索索引 54654 字；构建 21 个页面，约 2 秒
-- **线上版本**：`0b1766cb-69dc-44a2-bd6c-a274ba6048de`（Worker `firefly`）
-- **工作区**：干净（`git status` 无改动）
+- **内容**：11 篇文章、搜索索引 54654 字；构建 **42 个页面**（21 → 42，多出来的 21 个是 20 篇标签落地页 + 1 个标签索引），约 2.9 秒
+- **线上版本**：`0b1766cb-69dc-44a2-bd6c-a274ba6048de`（Worker `firefly`）——**本轮改动还没部署**，原因见第七节第一条
+- **工作区**：干净（本轮改动已提交）
+- **标签页**：`/tags/`（索引，每个标签一张卡列出该标签下所有文章）+ `/tags/<标签>/`（20 个），带 CollectionPage/ItemList/BreadcrumbList 结构化数据，已进 sitemap；中文 URL 用百分号编码
+- **相关文章**：文章底部按「共同标签 ×3 + 同分类 ×2」打分取前 3，一篇都没沾边就整块不显示
 - **壁纸**：静态 **17 张**（`ba-*` 13 张自己找的 + `ai-*` 4 张 AI 原创）+ 动态 **16 张**（`mv-*`，壁纸引擎视频，共 32.9MB）
 - **首页行为**：随机挑一张（刷新换）→ 90 秒轮换 → 主题配色跟着壁纸走 → 动态壁纸自动播放（右下角有开关）
 - **质量**：Lighthouse 首页 **99（手机）/ 100（桌面）**，无障碍 / 最佳做法 / SEO 全站 **100**；首页总字节 ~340KB
@@ -97,6 +100,8 @@ npx wrangler secret put <NAME>       # 设置密钥
 | 文章字段校验 | `src/content.config.ts` |
 | 文章分享卡片 | `src/pages/og/[slug].jpg.ts`（构建时 sharp 渲染 SVG） |
 | 结构化数据 | `src/data/seo.ts` + `BaseLayout.astro` 的 `schema` 属性 |
+| 标签落地页 / 标签索引 | `src/pages/tags/[tag].astro`、`src/pages/tags/index.astro`（公共逻辑在 `src/data/tags.ts`） |
+| 相关文章排序 | `src/data/related.ts`（展示在 `src/components/RelatedPosts.astro`） |
 | 缓存策略 | `public/_headers`（Cloudflare 是**合并**不是覆盖，通配符**不跨 `/`**） |
 | 部署配置 | `wrangler.toml` |
 | 搜索索引生成器 | `tools/build-search-index.lua` |
@@ -156,6 +161,8 @@ public/wallpaper/mobile/mv-mobile-01-8a9781d6.avif     手机竖版海报
 | 27 | JS 才显示的按钮别留在文档流里（会推动同行元素，Lighthouse 记 CLS），绝对定位钉在角落 |
 | 34 | 切页配色断层：新页面的 `<style>` 是构建时烘焙的，而当前壁纸是上一页延续的 → `show()` 里先 `applyTheme()`，并用 sessionStorage 记住"这一趟用第几张"（**只在浏览器后退/前进时沿用，刷新要重新随机**） |
 | 38 | 动态壁纸开关文案用**状态**写法（主人选定），别再改成"暂停动效 / 播放动效" |
+| 39 | `PostCard` 的标题是 `<h3>`：列表页如果在它上面没有 `<h2>`，Lighthouse 会判"标题层级跳跃"（h1 → h3），无障碍从 100 掉到 98。标签页加了一句 `<h2 class="section-title">这个标签下的文章</h2>` 才满分 |
+| 40 | 「整张卡片可点」别用嵌套 `<a>`（不合法、Tab 要停两次）：用拉伸链接 —— 标题里的 `<a>` 挂一个 `::after { position:absolute; inset:0 }` 铺满卡片，卡片里其他链接（标签）加 `position:relative; z-index:1` 压在上面 |
 
 ### 资源 / 缓存 / 性能
 
@@ -181,6 +188,8 @@ public/wallpaper/mobile/mv-mobile-01-8a9781d6.avif     手机竖版海报
 | 10 | 静态端点里写的响应头无效（会被写成文件），缓存策略去 `public/_headers` 配 |
 | 12 | 404 页要显式打开：`wrangler.toml` 里 `not_found_handling = "404-page"` |
 | 14 | secret 别用管道喂（末尾换行会被存进值里 → `TypeError: Invalid header value.`），用 `wrangler secret bulk` 传 JSON |
+| 41 | `_headers` **一条规则只允许一个 `*`**：`/tags/*/*` 会被整条丢掉（wrangler 只打一行 warning，很容易漏看）。多层路径要么一段一条规则，要么用占位符 `/tags/:tag/`（占位符能跨 `/`） |
+| 42 | 中文路径在 Cloudflare 静态资源上是通的：`/tags/%E5%BB%BA%E7%AB%99/` 能落到 `dist/tags/建站/index.html`（本地 `wrangler dev` 实测）。所以标签页的 URL 直接用中文，不用维护「标签 → 拼音」字典 |
 
 ### 工具链 / 流程
 
@@ -201,12 +210,18 @@ public/wallpaper/mobile/mv-mobile-01-8a9781d6.avif     手机竖版海报
 
 ## 七、待办 / 下一步
 
+- [ ] **先把本轮改动部署上线**（代码已提交，但 `npm run deploy` 卡在凭据上：本机 wrangler 没有登录态，也没有 `CLOUDFLARE_API_TOKEN` 环境变量）。
+      两条路：① 主人在终端里 `cd C:\Users\ROG\Desktop\yuki-theme` 后 `npx wrangler login`（浏览器里点一下，之后助手就能直接 `npm run deploy`）；
+      ② 或者直接自己跑一次 `npm run deploy`。部署完记得回来看下面的复查项。
+- [ ] **部署后复查**：① `/tags/` 和几个中文标签页能打开（`curl.exe -sI https://yuki666.online/tags/%E5%BB%BA%E7%AB%99/` 看 200 和 `stale-while-revalidate`）；② sitemap 里出现 21 条 `/tags/` 记录；③ 用证据目录的 `schema-check.mjs` 验一下标签页的 CollectionPage 结构化数据
 - [ ] **GSC 提交**：验证已通过的话，在 Search Console 里提交 `sitemap.xml`（要主人的账号，助手做不了）
 - [ ] **动态壁纸**：还想加就用 `npm run wallpapers:video -- --we <id>`；库里还剩 150+ 个视频型没挑
 - [ ] **D 盘空间**：只剩 29GB，`output/imagegen-hires/` 占 207MB（可删，需要时用 ComfyUI 重跑）
 - [ ] **`ba-desktop-11/12` 右上角带来源站水印**，介意就换图重导
 - [ ] **老壁纸有几张原生宽度不到 2560**（`ba-desktop-01` 1920、`06` 2000）：宽屏上会被拉伸，有空重导
-- [ ] **SEO 还能继续做**：① `/tags/<标签>/` 标签落地页（长尾搜索好使）；② 文章底部「相关文章」
+- [x] ~~SEO：`/tags/<标签>/` 标签落地页 + 文章底部「相关文章」~~（第五轮做完，见第二节）
+- [ ] **SEO 还能继续做**：① 标签页之间已经有内链，可以考虑给文章正文自动加「提到过的文章」链接；② 首页/归档加可见的面包屑
+- [ ] **标签页的扩展**：标签页现在只按时间排；如果某个标签文章多了，可以再按分类分组
 - [ ] **Lighthouse 剩余**：Twikoo 那个 588KB 的 JS 没带 source map（权重 0，不影响分数）
 - [ ] **国内访问**：根本瓶颈是 Cloudflare 没有国内节点（要备案才能上国内 CDN），暂未处理
 
@@ -230,6 +245,8 @@ public/wallpaper/mobile/mv-mobile-01-8a9781d6.avif     手机竖版海报
   - `consistency-check.mjs` —— 清单/尺寸表/配色/文件一致性自检
   - `wallpaper-rotation-check.mjs` / `theme-continuity-check.mjs` / `motion-button-check.mjs` —— 壁纸轮换、配色、开关的行为验收
   - `schema-check.mjs` —— 用 schema.org 验证器查结构化数据
+  - （第五轮新增，在 10/01 那个证据目录里）`shot-tags.mjs` —— 标签页 / 相关文章截图 + 链接抽查；
+    `lh-run.mjs` —— 和上面那个同款，但换成了绝对路径、报告写在 10/01 目录
 - **网络**：本机代理 `127.0.0.1:7890`（fake-ip 模式，`Resolve-DnsName` 结果不可信，要看真实解析走 DoH）
   - GitHub / scoop / npm 走代理；Cloudflare API 直连可用
   - 实测过：走系统代理请求 `https://yuki666.online/sitemap.xml` 偶尔会卡到超时，`curl.exe`（直连）正常——是代理抽风，不是站点问题
@@ -250,3 +267,4 @@ public/wallpaper/mobile/mv-mobile-01-8a9781d6.avif     手机竖版海报
 - **第三轮**：新文章《SEO 基建》、音频瘦身、动态孤儿图清理、本机工具链（Lua 5.5 / ffmpeg）
 - **第四轮**：AI 原创壁纸上线并高清化 → 留言区修复 → SEO（JSON-LD + 分享卡片）→ 无障碍修到满分 → 追加壁纸 → **动态壁纸（壁纸引擎视频）** → 性能三轮优化
 - **第五轮起点**：2026-10-01，本文档重写
+- **第五轮正文**：SEO 下半场 —— **标签落地页**（`/tags/` 索引 + 20 个 `/tags/<标签>/`，含 CollectionPage 结构化数据、sitemap、全站内链）+ **文章底部相关文章**（共同标签 / 同分类打分）。9 个页面跑了 Lighthouse：新页面无障碍 / 最佳做法 / SEO 全 100，首页与归档无回归。**代码已提交，部署待凭据**

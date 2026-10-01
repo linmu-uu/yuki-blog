@@ -10,21 +10,12 @@ import CalendarCard from "../components/CalendarCard.astro";
 import { albums } from "../data/gallery";
 import { site } from "../data/site";
 import { websiteSchemas } from "../data/seo";
+import { collectTags, postHref } from "../data/tags";
 
 const allPosts = await getCollection("posts", ({ data }) => !data.draft);
 const posts = allPosts.sort((a, b) => b.data.published.valueOf() - a.data.published.valueOf());
 
-const tagCounts = new Map<string, number>();
-for (const post of posts) {
-	for (const tag of post.data.tags) {
-		tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
-	}
-}
-const tags = [...tagCounts.entries()]
-	.map(([name, count]) => ({ name, count }))
-	.sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
-
-const postHref = (id: string) => `/posts/${id.replace(/\.(md|mdx)$/, "")}/`;
+const tags = collectTags(posts);
 
 /** 日历上要标记的日子：有文章的那天带链接和标题 */
 const isoDate = (date: Date) =>
