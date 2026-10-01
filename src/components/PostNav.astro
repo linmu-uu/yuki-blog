@@ -1,0 +1,103 @@
+---
+import { postHref, type PostEntry } from "../data/tags";
+
+/*
+ * 文章底部的「上一篇 / 下一篇」。
+ *
+ * 顺序按发布时间：上一篇 = 更早的那篇，下一篇 = 更新的那篇（和 WordPress 的习惯一致）。
+ * 这是最「顺路」的一组内链 —— 读者读完想接着读时不用回列表页翻，
+ * 每篇文章也多两条通向邻居的路，而不是只能原路返回列表。
+ *
+ * 邻居在 src/pages/posts/[...slug].astro 的 getStaticPaths 里算好传进来（那边本来就排过序了）。
+ */
+interface Props {
+	/** 更早的一篇 */
+	older: PostEntry | null;
+	/** 更新的一篇 */
+	newer: PostEntry | null;
+}
+
+const { older, newer } = Astro.props;
+
+const dateLabel = new Intl.DateTimeFormat("zh-CN", {
+	year: "numeric",
+	month: "2-digit",
+	day: "2-digit",
+});
+---
+
+{
+	(older || newer) && (
+		<nav class="post-nav" aria-label="上一篇 / 下一篇">
+			{older && (
+				<a
+					class="card post-nav__link"
+					href={postHref(older.id)}
+					aria-label={`上一篇：${older.data.title}`}
+				>
+					<span class="post-nav__label">← 上一篇</span>
+					<span class="post-nav__title">{older.data.title}</span>
+					<span class="post-nav__meta">{dateLabel.format(older.data.published)}</span>
+				</a>
+			)}
+			{newer && (
+				<a
+					class="card post-nav__link post-nav__link--next"
+					href={postHref(newer.id)}
+					aria-label={`下一篇：${newer.data.title}`}
+				>
+					<span class="post-nav__label">下一篇 →</span>
+					<span class="post-nav__title">{newer.data.title}</span>
+					<span class="post-nav__meta">{dateLabel.format(newer.data.published)}</span>
+				</a>
+			)}
+		</nav>
+	)
+}
+
+<style>
+	.post-nav {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--content-gap);
+		margin-bottom: var(--space-7);
+	}
+
+	.post-nav__link {
+		/* 只剩一边时也占满整行，不用留个空框在对面 */
+		flex: 1 1 240px;
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		padding: var(--space-4) var(--space-5);
+	}
+
+	.post-nav__link--next {
+		align-items: flex-end;
+		text-align: right;
+	}
+
+	.post-nav__label {
+		font-size: var(--text-xs);
+		letter-spacing: 0.1em;
+		color: var(--accent-soft);
+	}
+
+	.post-nav__title {
+		font-size: var(--text-base);
+		font-weight: 700;
+		line-height: 1.5;
+		color: var(--text);
+		transition: color var(--dur) var(--ease-soft);
+	}
+
+	.post-nav__link:hover .post-nav__title {
+		color: var(--accent-soft);
+	}
+
+	.post-nav__meta {
+		font-size: var(--text-xs);
+		color: var(--text-dim);
+		font-variant-numeric: tabular-nums;
+	}
+</style>

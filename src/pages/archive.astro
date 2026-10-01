@@ -2,6 +2,8 @@
 import { getCollection } from "astro:content";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import PageHeader from "../components/PageHeader.astro";
+import Breadcrumbs from "../components/Breadcrumbs.astro";
+import { collectionSchemas, postUrl } from "../data/seo";
 import { collectTags, postHref } from "../data/tags";
 
 const allPosts = await getCollection("posts", ({ data }) => !data.draft);
@@ -18,12 +20,24 @@ for (const post of posts) {
 const tags = collectTags(posts);
 
 const href = postHref;
+const description = `目前一共 ${posts.length} 篇文章，按年份排列。`;
 const dateLabel = (date: Date) =>
 	new Intl.DateTimeFormat("zh-CN", { month: "2-digit", day: "2-digit" }).format(date);
 ---
 
-<BaseLayout title={`文章归档 - ${posts.length} 篇`} description="按时间浏览这个小窝里的所有文章">
-	<PageHeader title="文章归档" description={`目前一共 ${posts.length} 篇文章，按年份排列。`} />
+<BaseLayout
+	title={`文章归档 - ${posts.length} 篇`}
+	description="按时间浏览这个小窝里的所有文章"
+	schema={collectionSchemas({
+		path: "/archive/",
+		name: "文章归档",
+		description,
+		items: posts.map((post) => ({ name: post.data.title, url: postUrl(post.id) })),
+	})}
+>
+	<PageHeader title="文章归档" description={description}>
+		<Breadcrumbs slot="breadcrumb" items={[{ name: "文章归档" }]} />
+	</PageHeader>
 
 	<main class="shell page-body archive">
 		<div class="archive__tags" data-tags>

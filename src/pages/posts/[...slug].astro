@@ -3,6 +3,8 @@ import { getCollection, render } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import Comment from "../../components/Comment.astro";
 import RelatedPosts from "../../components/RelatedPosts.astro";
+import PostNav from "../../components/PostNav.astro";
+import Breadcrumbs from "../../components/Breadcrumbs.astro";
 import "../../styles/prose.css";
 import { site } from "../../data/site";
 import { postSchemas } from "../../data/seo";
@@ -10,14 +12,22 @@ import { tagHref } from "../../data/tags";
 import { relatedPosts } from "../../data/related";
 
 export async function getStaticPaths() {
-	const posts = await getCollection("posts", ({ data }) => !data.draft);
-	return posts.map((post) => ({
+	// 按发布时间从新到旧排一次：文章底部的「上一篇 / 下一篇」就是这份顺序里的邻居
+	const posts = (await getCollection("posts", ({ data }) => !data.draft)).sort(
+		(a, b) => b.data.published.valueOf() - a.data.published.valueOf(),
+	);
+	return posts.map((post, index) => ({
 		params: { slug: post.id.replace(/\.(md|mdx)$/, "") },
-		props: { post },
+		props: {
+			post,
+			// 上一篇 = 更早的那篇，下一篇 = 更新的那篇
+			older: posts[index + 1] ?? null,
+			newer: posts[index - 1] ?? null,
+		},
 	}));
 }
 
-const { post } = Astro.props;
+const { post, older, newer } = Astro.props;
 const { Content, headings } = await render(post);
 const toc = headings.filter((heading) => heading.depth <= 3);
 
@@ -50,6 +60,8 @@ const publishedLabel = new Intl.DateTimeFormat("zh-CN", {
 		<article class="post">
 		<header class="post__header">
 			<div class="shell post__header-inner">
+				{/* 可见面包屑：层级和 src/data/seo.ts 的 BreadcrumbList 一模一样 */}
+				<Breadcrumbs items={[{ name: "文章归档", href: "/archive/" }, { name: post.data.title }]} />
 				<div class="post__meta">
 					<time datetime={post.data.published.toISOString()}>{publishedLabel}</time>
 					{post.data.category && <span class="post__category">{post.data.category}</span>}
@@ -96,6 +108,7 @@ const publishedLabel = new Intl.DateTimeFormat("zh-CN", {
 		</div>
 
 		<div class="shell post__footer">
+			<PostNav older={older} newer={newer} />
 			<RelatedPosts posts={related} />
 			<Comment />
 		</div>

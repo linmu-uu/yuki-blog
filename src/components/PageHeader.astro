@@ -10,6 +10,8 @@ const { title, description = "", meta = "" } = Astro.props;
 
 <header class="page-header">
 	<div class="shell page-header__inner">
+		{/* 面包屑走具名插槽传进来（比如归档页、标签页），不传就什么都不渲染 */}
+		<slot name="breadcrumb" />
 		<h1 class="page-header__title">{title}</h1>
 		{description && <p class="page-header__desc">{description}</p>}
 		{meta && <p class="page-header__meta">{meta}</p>}

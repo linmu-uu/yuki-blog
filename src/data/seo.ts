@@ -93,6 +93,8 @@ export function collectionSchemas(config: {
 	path: string;
 	/** 页面名（也是面包屑最后一节的文字） */
 	name: string;
+	/** 面包屑最后一节的文字。不写就跟 name 一样；页面标题和面包屑措辞不同时才需要（比如标签页 h1 是「#建站」，页面名是「标签：建站」） */
+	crumbName?: string;
 	description: string;
 	/** 面包屑中间层（不含首页和当前页），比如 [{ name: "标签", path: "/tags/" }] */
 	trail?: { name: string; path: string }[];
@@ -127,7 +129,11 @@ export function collectionSchemas(config: {
 	const crumbs = [
 		{ name: "首页", item: `${site.url}/` },
 		...(config.trail ?? []).map((step) => ({ name: step.name, item: abs(step.path) })),
-		{ name: config.name, item: url },
+		/*
+		 * 面包屑最后一节要和页面上看得见的那一条对得上（Google 会拿两边对，
+		 * 对不上可能整条结构化数据都不显示），所以这里允许单独指定措辞。
+		 */
+		{ name: config.crumbName ?? config.name, item: url },
 	];
 
 	const breadcrumb = {

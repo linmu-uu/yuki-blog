@@ -1,0 +1,107 @@
+---
+/*
+ * 可见面包屑（站点层级导航）。
+ *
+ * 和 JSON-LD 里的 BreadcrumbList 是一对：结构化数据给爬虫看，这一块给访客看。
+ * 两边的内容要一致 —— 只留 JSON-LD 没有可见面包屑，Google 会按「结构化数据与可见内容不符」处理；
+ * 反过来只做可见不算数，搜索结果的层级路径要 JSON-LD 才出得来。所以两边都做，且共用同一份层级。
+ *
+ * 用法（不用写「首页」，组件自己加）：
+ *   <Breadcrumbs items={[{ name: "文章归档", href: "/archive/" }, { name: post.data.title }]} />
+ * 最后一项是当前页：不加链接、带 aria-current="page"。
+ */
+interface Item {
+	name: string;
+	href?: string;
+}
+
+interface Props {
+	/** 除「首页」以外的层级，最后一项是当前页 */
+	items: Item[];
+}
+
+const { items } = Astro.props;
+const trail: Item[] = [{ name: "首页", href: "/" }, ...items];
+---
+
+<nav class="crumbs" aria-label="面包屑">
+	<ol class="crumbs__list">
+		{
+			trail.map((item, index) => {
+				const isCurrent = index === trail.length - 1;
+				return (
+					<li class="crumbs__item">
+						{isCurrent ? (
+							<span class="crumbs__current" aria-current="page">
+								{item.name}
+							</span>
+						) : (
+							<a class="crumbs__link" href={item.href ?? "/"}>
+								{item.name}
+							</a>
+						)}
+						{!isCurrent && (
+							<span class="crumbs__sep" aria-hidden="true">
+								/
+							</span>
+						)}
+					</li>
+				);
+			})
+		}
+	</ol>
+</nav>
+
+<style>
+	.crumbs {
+		margin-bottom: var(--space-3);
+	}
+
+	.crumbs__list {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-2);
+		margin: 0;
+		padding: 0;
+		list-style: none;
+		font-size: var(--text-xs);
+		letter-spacing: 0.06em;
+	}
+
+	.crumbs__item {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
+		min-width: 0;
+	}
+
+	/* 手机上也要能点得着：可点区域撑到 24px 以上（Lighthouse tap targets） */
+	.crumbs__link {
+		display: inline-flex;
+		align-items: center;
+		min-height: 26px;
+		color: var(--text-dim);
+		transition: color var(--dur) var(--ease-soft);
+	}
+
+	.crumbs__link:hover {
+		color: var(--accent-soft);
+	}
+
+	.crumbs__current {
+		display: inline-block;
+		max-width: 46ch;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		min-height: 26px;
+		line-height: 26px;
+		color: var(--text-muted);
+	}
+
+	.crumbs__sep {
+		color: var(--text-dim);
+		opacity: 0.6;
+	}
+</style>

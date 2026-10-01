@@ -2,6 +2,7 @@
 import { getCollection } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import PageHeader from "../../components/PageHeader.astro";
+import Breadcrumbs from "../../components/Breadcrumbs.astro";
 import { site } from "../../data/site";
 import { collectionSchemas } from "../../data/seo";
 import { collectTags, postHref, postsWithTag, tagHref } from "../../data/tags";
@@ -37,7 +38,9 @@ const dateLabel = new Intl.DateTimeFormat("zh-CN", {
 		})),
 	})}
 >
-	<PageHeader title="标签" description={description} />
+	<PageHeader title="标签" description={description}>
+		<Breadcrumbs slot="breadcrumb" items={[{ name: "标签" }]} />
+	</PageHeader>
 
 	<main class="shell page-body">
 		<div class="tag-groups">
