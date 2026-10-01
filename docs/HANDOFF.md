@@ -19,6 +19,7 @@
 | `D:\uuuj\steamapps\workshop\content\431960` | **壁纸引擎创意工坊库**（视频型 176 个 / 场景型 269 个） | — | 动态壁纸的素材来源 |
 | `D:\ComfyUI_windows_portable` | 本地 ComfyUI（SDXL + 放大模型） | — | 命令行启动，见第八节 |
 | `D:\New` | 助手人格设定（喵酱）+ 临时脚本 | — | — |
+| `C:\Users\ROG\.codex\visualizations\2026\09\24\01a0d3fb-57f8-7270-b772-970fb500f2e9` | **助手证据 / 工具脚本目录**（截图、对比图、验收脚本，见第八节） | — | — |
 
 所有 Worker 在同一个 Cloudflare 账号下，主站是纯静态资源 Worker（名字沿用老站的 `firefly`）。
 
@@ -220,6 +221,15 @@ public/wallpaper/mobile/mv-mobile-01-8a9781d6.avif     手机竖版海报
 - **截图验证**：本机已缓存 Chromium `C:\Users\ROG\AppData\Local\ms-playwright\chromium-1208\chrome-win64\chrome.exe`；
   playwright-core 可以直接借用证据目录里那份（`...\2026\09\24\01a0d3b5-.../node_modules/playwright-core`）
 - **Lighthouse**：装在证据目录（`lh-run.mjs <url> [mobile|desktop|scores]`），跑之前要把 `TEMP/TMP` 指到可写目录，否则 chrome-launcher 清理临时目录会 `EPERM`
+- **助手证据目录**（上面项目地图里那个）：里面躺着这一轮写的验收脚本，都能直接复用
+  - `lh-run.mjs <url> [mobile|desktop|scores]` —— 跑 Lighthouse（要先把 `TEMP/TMP` 指到可写目录）
+  - `we-screen.mjs` / `we-rescreen.mjs` —— 把壁纸引擎库里所有视频型壁纸按硬指标筛一遍
+  - `we-sheet.mjs ids <id> <id>` —— 给候选素材抽帧拼对照图，肉眼挑
+  - `opening-check.mjs` —— 检查视频壁纸开局那一帧
+  - `comfy-upscale.mjs` —— 调本机 ComfyUI 放大图片
+  - `consistency-check.mjs` —— 清单/尺寸表/配色/文件一致性自检
+  - `wallpaper-rotation-check.mjs` / `theme-continuity-check.mjs` / `motion-button-check.mjs` —— 壁纸轮换、配色、开关的行为验收
+  - `schema-check.mjs` —— 用 schema.org 验证器查结构化数据
 - **网络**：本机代理 `127.0.0.1:7890`（fake-ip 模式，`Resolve-DnsName` 结果不可信，要看真实解析走 DoH）
   - GitHub / scoop / npm 走代理；Cloudflare API 直连可用
   - 实测过：走系统代理请求 `https://yuki666.online/sitemap.xml` 偶尔会卡到超时，`curl.exe`（直连）正常——是代理抽风，不是站点问题
